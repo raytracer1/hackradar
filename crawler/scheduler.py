@@ -1,12 +1,29 @@
 import asyncio
 import logging
 import json
+import re
 from datetime import datetime
 
 from r2_client import upload_hackathons
 from config import CRAWL_INTERVAL_SECONDS
 
 logger = logging.getLogger(__name__)
+
+
+def has_cash_prize(prize_pool: str | None) -> bool:
+    """Return True if prize_pool indicates a non-zero cash prize."""
+    if not prize_pool:
+        return False
+    # Extract the first number (supports "$10,000", "10000", "10k USD", etc.)
+    cleaned = prize_pool.replace(",", "").replace("$", "")
+    m = re.search(r"[\d.]+", cleaned)
+    if not m:
+        return False
+    try:
+        amount = float(m.group())
+    except ValueError:
+        return False
+    return amount > 0
 
 
 def normalize_themes(themes) -> list[str]:
@@ -59,12 +76,19 @@ class Scheduler:
             try:
                 logger.info(f"Running plugin: {plugin.name}")
                 items = await plugin.fetch()
+                kept = 0
+                dropped = 0
                 for item in items:
                     d = item_to_dict(item)
                     if d["sourceId"] not in seen:
                         seen.add(d["sourceId"])
-                        all_items.append(d)
-                logger.info(f"Plugin {plugin.name}: {len(items)} scraped")
+                        if has_cash_prize(d["prizePool"]):
+                            all_items.append(d)
+                            kept += 1
+                        else:
+                            dropped += 1
+                            logger.debug(f"Filtered out (no cash prize): {d['title']} (prizePool={d['prizePool']!r})")
+                logger.info(f"Plugin {plugin.name}: {len(items)} scraped, {kept} kept (cash prize), {dropped} dropped (no cash/zero)")
             except Exception as e:
                 logger.error(f"Plugin {plugin.name} failed: {e}", exc_info=True)
 
