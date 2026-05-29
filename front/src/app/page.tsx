@@ -99,12 +99,12 @@ export default function Home() {
     if (!el) return;
     const handleScroll = () => {
       if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-        setDisplayCount((prev) => Math.min(prev + DISPLAY, allData.length));
+        setDisplayCount((prev) => Math.min(prev + DISPLAY, filtered.length));
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [allData.length]);
+  }, [allData.length, filtered.length]);
 
   // Initial load: preload all chunks
   useEffect(() => {
