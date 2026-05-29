@@ -6,6 +6,10 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
 	"r2_buckets": [
 		{
 			"binding": "DATA_BUCKET",
@@ -13,6 +17,6 @@
 		}
 	],
 	"vars": {
-		"CRAWLER_API_KEY": "0a208df58172896ac39a5088812643c8a52efb533ac3e024ac041fc685a44f66"
-	}
+      "CRAWLER_API_KEY": "0a208df58172896ac39a5088812643c8a52efb533ac3e024ac041fc685a44f66"
+  	}
 }
