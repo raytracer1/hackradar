@@ -41,8 +41,7 @@ export default function HackathonDetail({
         <img
           src={imageUrl}
           alt={title}
-          className="mb-8 w-full rounded-xl object-cover shadow-md"
-          style={{ maxHeight: 400 }}
+          className="mb-6 h-20 w-20 rounded-lg object-cover"
         />
       )}
 
