@@ -63,13 +63,15 @@ def _list_keys(s3, prefix: str) -> list[str]:
         return []
 
 
+CHUNK_SIZE = 200
+
 def upload_hackathons(items: list[dict]) -> bool:
     """
-    Atomic upload with versioning:
+    Atomic upload with versioning and chunking:
     1. Generate new version
-    2. Upload hackathons-{version}.json
-    3. Delete old meta.json, upload new meta.json
-    4. Delete old hackathons-*.json files
+    2. Split items into chunks, upload hackathons-{version}-{i}.json
+    3. Upload new meta.json with fileCount
+    4. Delete old version files
     """
     if not R2_ENDPOINT or not R2_ACCESS_KEY:
         logger.warning("R2 credentials not configured, skipping upload")
@@ -77,36 +79,41 @@ def upload_hackathons(items: list[dict]) -> bool:
 
     s3 = get_s3_client()
     version = _make_version()
-    hackathon_key = f"hackathons-{version}.json"
 
     try:
-        # 1. Read old meta to find previous version
         old_meta = _read_json(s3, META_KEY)
         old_version = old_meta.get("version") if old_meta else None
 
-        # 2. Upload new hackathons file
-        logger.info(f"Uploading {len(items)} hackathons to {hackathon_key}")
-        _write_json(s3, hackathon_key, items)
+        # Split into chunks and upload
+        chunk_count = (len(items) + CHUNK_SIZE - 1) // CHUNK_SIZE
+        for i in range(chunk_count):
+            chunk = items[i * CHUNK_SIZE : (i + 1) * CHUNK_SIZE]
+            key = f"hackathons-{version}-{i + 1}.json"
+            _write_json(s3, key, chunk)
+            logger.info(f"Uploaded chunk {i + 1}/{chunk_count}: {key} ({len(chunk)} items)")
 
-        # 3. Delete old meta, then upload new meta (atomic-ish)
+        # Update meta
         new_meta = {
             "version": version,
             "count": len(items),
+            "fileCount": chunk_count,
             "updated_at": datetime.utcnow().isoformat() + "Z",
         }
-        _delete_key(s3, META_KEY)
         _write_json(s3, META_KEY, new_meta)
-        logger.info(f"Uploaded meta.json: version={version}, count={len(items)}")
+        logger.info(f"Uploaded meta.json: version={version}, count={len(items)}, fileCount={chunk_count}")
 
-        # 4. Clean up old hackathons files
+        # Clean up old version files
         if old_version and old_version != version:
-            old_keys = _list_keys(s3, "hackathons-")
+            old_keys = _list_keys(s3, f"hackathons-{old_version}")
             for key in old_keys:
-                if key != hackathon_key:
-                    _delete_key(s3, key)
-                    logger.info(f"Deleted old file: {key}")
+                _delete_key(s3, key)
+                logger.info(f"Deleted old file: {key}")
 
-        logger.info(f"Upload complete: {hackathon_key}")
+            # Also delete old single-file format if it exists
+            old_single = f"hackathons-{old_version}.json"
+            _delete_key(s3, old_single)
+
+        logger.info(f"Upload complete: version={version}")
         return True
 
     except Exception as e:

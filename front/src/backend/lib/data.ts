@@ -47,8 +47,26 @@ export async function getCurrentHackathons(): Promise<HackathonData[]> {
   const meta = await getMeta();
   if (!meta) return [];
 
-  const key = `hackathons-${meta.version}.json`;
-  return (await readJSON(key)) || [];
+  const fileCount = (meta as any).fileCount || 1;
+  const all: HackathonData[] = [];
+
+  for (let i = 1; i <= fileCount; i++) {
+    const key = `hackathons-${meta.version}-${i}.json`;
+    const chunk = await readJSON(key);
+    if (chunk && Array.isArray(chunk)) {
+      all.push(...chunk);
+    }
+  }
+
+  // Fallback: old single-file format
+  if (all.length === 0) {
+    const single = await readJSON(`hackathons-${meta.version}.json`);
+    if (single && Array.isArray(single)) {
+      all.push(...single);
+    }
+  }
+
+  return all;
 }
 
 export async function getCurrentPlatforms(): Promise<any[]> {
