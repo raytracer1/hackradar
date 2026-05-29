@@ -22,16 +22,33 @@ class DevpostPlugin(BasePlugin):
             headers={"User-Agent": USER_AGENT},
             timeout=REQUEST_TIMEOUT,
         ) as client:
-            try:
-                resp = await client.get(
-                    "https://devpost.com/api/hackathons",
-                    params={"status": "open"},
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                hackathons = data.get("hackathons", [])
-            except Exception as e:
-                logger.warning(f"Devpost API failed, trying HTML fallback: {e}")
+            hackathons: list[dict] = []
+            page = 1
+            while True:
+                try:
+                    resp = await client.get(
+                        "https://devpost.com/api/hackathons",
+                        params={"status": "open", "page": page, "per_page": 100},
+                    )
+                    if resp.status_code != 200:
+                        break
+                    data = resp.json()
+                    meta = data.get("meta", {})
+                    total = meta.get("total_count", "?")
+                    page_items = data.get("hackathons", [])
+                    if not page_items:
+                        break
+                    hackathons.extend(page_items)
+                    logger.info(f"Devpost page {page}: {len(page_items)} items (total: {total}, collected: {len(hackathons)})")
+                    if not page_items or len(hackathons) >= total:
+                        break
+                    page += 1
+                except Exception as e:
+                    logger.warning(f"Devpost page {page} error: {e}")
+                    break
+
+            if not hackathons:
+                logger.warning("Devpost API returned no results, trying HTML fallback")
                 hackathons = await self._scrape_html(client)
 
             for h in hackathons:
@@ -81,6 +98,35 @@ class DevpostPlugin(BasePlugin):
             return text
         return re.sub(r"<[^>]+>", "", text).strip()
 
+    @staticmethod
+    def _parse_period(period: str) -> tuple[datetime | None, datetime | None]:
+        """Parse Devpost submission_period_dates like 'Jun 1 - Aug 31, 2026'."""
+        if not period:
+            return None, None
+        try:
+            parts = [p.strip() for p in period.split("-", 1)]
+            if len(parts) != 2:
+                # "Jun 1, 2026" single date
+                from dateutil.parser import parse
+                dt = parse(parts[0])
+                return dt, dt
+            start_str = parts[0]
+            end_str = parts[1]
+            # "Aug 31, 2026" or "Aug 31" with implicit year from start
+            from dateutil.parser import parse
+            start = parse(start_str)
+            try:
+                end = parse(end_str)
+            except Exception:
+                # end might be "Aug 31" without year
+                try:
+                    end = parse(f"{end_str}, {start.year}")
+                except Exception:
+                    end = start
+            return start, end
+        except Exception:
+            return None, None
+
     def _parse(self, h: dict) -> HackathonItem | None:
         title = h.get("title", "").strip()
         url = h.get("url", "")
@@ -92,11 +138,8 @@ class DevpostPlugin(BasePlugin):
         if not source_id:
             source_id = url.rstrip("/").split("/")[-1]
 
-        # Parse dates
-        start_str = h.get("submission_period_dates", h.get("start_date", ""))
-        end_str = h.get("submission_period_dates", h.get("end_date", ""))
-
-        # Parse themes (Devpost returns list of dicts)
+        # Parse dates - Devpost uses "submission_period_dates" like "Jun 1 - Aug 31, 2026"
+        start_date, end_date = self._parse_period(h.get("submission_period_dates", ""))
         themes_raw = h.get("themes", h.get("tags", []))
         themes: list[str] = []
         if isinstance(themes_raw, str):
@@ -110,25 +153,31 @@ class DevpostPlugin(BasePlugin):
                 elif isinstance(t, str):
                     themes.append(t)
 
+        # Extract location string from API response
+        loc_raw = h.get("displayed_location")
+        if isinstance(loc_raw, dict):
+            loc_str = loc_raw.get("name", "") if loc_raw else ""
+        else:
+            loc_str = str(loc_raw or "")
+
         return HackathonItem(
             source_id=f"devpost_{source_id}",
             source="devpost",
             title=title,
-            description=self._strip_html(h.get("description", h.get("excerpt", ""))),
+            description=self._strip_html(h.get("description", "")),
             url=url,
-            image_url=h.get("thumbnail_url", h.get("image_url")),
-            mode=self._guess_mode(h),
-            location=h.get("location"),
-            start_date=datetime.now(),
-            end_date=datetime.now(),
+            image_url=h.get("thumbnail_url"),
+            mode=self._guess_mode(loc_str),
+            location=loc_str or None,
+            start_date=start_date or datetime.now(),
+            end_date=end_date or datetime.now(),
             prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
         )
 
-    def _guess_mode(self, h: dict) -> str:
-        loc = (h.get("location") or "").lower()
-        if not loc:
+    @staticmethod
+    def _guess_mode(loc_str: str) -> str:
+        loc = loc_str.lower()
+        if not loc or "online" in loc:
             return "online"
-        if "online" in loc:
-            return "hybrid" if h.get("location") else "online"
         return "offline"
