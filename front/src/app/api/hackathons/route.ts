@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentHackathons, getCurrentPlatforms } from '@/backend/lib/data';
+import { getCurrentHackathons } from '@/backend/lib/data';
 import type { HackathonData } from '@/backend/lib/data';
 
 function enrich(h: HackathonData) {
