@@ -19,5 +19,11 @@
 	"vars": {
       "CRAWLER_API_KEY": "0a208df58172896ac39a5088812643c8a52efb533ac3e024ac041fc685a44f66",
       "NEXT_PUBLIC_GA_ID": "G-ZYF6MZDBX3"
-  	}
+  	},
+	"observability": {
+		"logs": {
+		"enabled": false,
+		"invocation_logs": true
+		}
+	}
 }
