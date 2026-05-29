@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getPlatformsData, getAllHackathons } from '@/backend/lib/data';
+import { getCurrentPlatforms } from '@/backend/lib/data';
 
 export async function GET() {
   try {
-    const platforms = await getPlatformsData();
-    const hackathons = await getAllHackathons();
-
-    const data = platforms.map((p) => ({
-      ...p,
-      hackathonCount: hackathons.filter((h) => h.source === p.slug).length,
-    }));
-
+    const data = await getCurrentPlatforms();
     return NextResponse.json({ data });
   } catch (error) {
     console.error('GET /api/platforms error:', error);

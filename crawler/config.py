@@ -11,9 +11,11 @@ if _env_path.exists():
                 key, _, value = line.partition("=")
                 os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
-# API endpoint
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
-CRAWLER_API_KEY = os.getenv("CRAWLER_API_KEY", "changeme-secret-key")
+# R2 S3 credentials
+R2_ENDPOINT = os.getenv("R2_ENDPOINT", "")
+R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY", "")
+R2_SECRET_KEY = os.getenv("R2_SECRET_KEY", "")
+R2_BUCKET = os.getenv("R2_BUCKET", "hackradar-data")
 
 CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(3 * 3600)))
 USER_AGENT = "HackRadarBot/1.0 (+https://github.com/hackradar)"

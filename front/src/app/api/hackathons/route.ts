@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllHackathons, upsertHackathon, ensurePlatforms } from '@/backend/lib/data';
-import type { HackathonInput } from '@/backend/lib/data';
+import { getCurrentHackathons, getCurrentPlatforms } from '@/backend/lib/data';
+import type { HackathonData } from '@/backend/lib/data';
+
+function enrich(h: HackathonData) {
+  const platformName = h.source.charAt(0).toUpperCase() + h.source.slice(1);
+  return {
+    ...h,
+    id: h.sourceId,
+    platform: { name: platformName, slug: h.source },
+    clusterKey: '',
+    slug: h.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').slice(0, 100),
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
-    await ensurePlatforms();
-    let data = await getAllHackathons();
+    let data = (await getCurrentHackathons()).map(enrich);
     const sp = request.nextUrl.searchParams;
 
     const status = sp.get('status') || 'active';
@@ -15,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (mode) data = data.filter((h) => h.mode === mode);
 
     const platform = sp.get('platform');
-    if (platform) data = data.filter((h) => h.platform?.slug === platform);
+    if (platform) data = data.filter((h) => h.source === platform);
 
     const search = sp.get('search');
     if (search) {
@@ -54,45 +64,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('GET /api/hackathons error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const apiKey = request.headers.get('x-api-key');
-    if (apiKey !== process.env.CRAWLER_API_KEY) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    await ensurePlatforms();
-    const body = await request.json();
-
-    if (!body.title || !body.url || !body.sourceId || !body.source) {
-      return NextResponse.json({ error: 'Missing required fields: title, url, sourceId, source' }, { status: 400 });
-    }
-
-    const input: HackathonInput = {
-      title: body.title,
-      description: body.description || null,
-      url: body.url,
-      imageUrl: body.imageUrl || null,
-      mode: body.mode || 'online',
-      location: body.location || null,
-      startDate: body.startDate || new Date().toISOString(),
-      endDate: body.endDate || new Date().toISOString(),
-      timezone: body.timezone || null,
-      prizePool: body.prizePool || null,
-      themes: body.themes || [],
-      sourceId: body.sourceId,
-      source: body.source,
-      status: body.status || 'active',
-    };
-
-    const hackathon = await upsertHackathon(input);
-    return NextResponse.json({ data: hackathon }, { status: 200 });
-  } catch (error) {
-    console.error('POST /api/hackathons error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

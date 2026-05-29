@@ -13,7 +13,7 @@ interface HackathonDetailProps {
   endDate: string;
   timezone: string | null;
   prizePool: string | null;
-  themes: string;
+  themes: string | string[];
   platform: { name: string; slug: string };
 }
 
@@ -31,9 +31,9 @@ export default function HackathonDetail({
   themes,
   platform,
 }: HackathonDetailProps) {
-  const themeList: string[] = (() => {
+  const themeList: string[] = Array.isArray(themes) ? themes : (() => {
     if (!themes || themes === '[]') return [];
-    try { return JSON.parse(themes); } catch { return []; }
+    try { return JSON.parse(themes as string); } catch { return []; }
   })();
 
   return (
