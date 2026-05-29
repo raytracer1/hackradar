@@ -219,29 +219,29 @@ export default function Home() {
           {filtered.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden" style={{ minHeight: 500 }}>
+            <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden">
               <div
                 ref={listRef}
-                className="w-full sm:w-96 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
+                className="w-full sm:w-96 flex-shrink-0 self-stretch border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
                 style={{ maxHeight: 'calc(100vh - 280px)' }}
               >
-                {visible.map((h) => (
-                  <HackathonListItem
-                    key={h.id}
-                    id={h.id}
-                    title={h.title}
-                    startDate={h.startDate}
-                    endDate={h.endDate}
-                    platform={h.platform}
-                    prizePool={h.prizePool}
-                    selected={selectedId === h.id}
-                    onClick={() => setSelectedId(h.id)}
-                  />
-                ))}
-                {displayCount < filtered.length && (
-                  <div className="p-4 text-center text-sm text-gray-400">Loading more...</div>
-                )}
-              </div>
+                  {visible.map((h) => (
+                    <HackathonListItem
+                      key={h.id}
+                      id={h.id}
+                      title={h.title}
+                      startDate={h.startDate}
+                      endDate={h.endDate}
+                      platform={h.platform}
+                      prizePool={h.prizePool}
+                      selected={selectedId === h.id}
+                      onClick={() => setSelectedId(h.id)}
+                    />
+                  ))}
+                  {displayCount < filtered.length && (
+                    <div className="p-4 text-center text-sm text-gray-400">Loading more...</div>
+                  )}
+                </div>
 
               <div className="flex flex-1 flex-col">
                 {selected ? (

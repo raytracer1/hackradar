@@ -37,7 +37,7 @@ export default function HackathonListItem({
     <button
       type="button"
       onClick={onClick}
-      className={`group w-full px-4 py-4 text-left transition-all duration-150 border-b border-slate-400 hover:bg-slate-50 ${
+      className={`group w-full px-4 py-4 text-left transition-all duration-150 border-b border-slate-400 last:border-b-0 hover:bg-slate-50 ${
         selected ? 'border-l-[3px] border-l-indigo-600 bg-indigo-50/60 pl-[13px]' : 'border-l-[3px] border-l-transparent'
       }`}
     >
