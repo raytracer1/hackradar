@@ -31,7 +31,10 @@ export default function HackathonDetail({
   themes,
   platform,
 }: HackathonDetailProps) {
-  const themeList: string[] = JSON.parse(themes || '[]');
+  const themeList: string[] = (() => {
+    if (!themes || themes === '[]') return [];
+    try { return JSON.parse(themes); } catch { return []; }
+  })();
 
   return (
     <article className="mx-auto max-w-3xl">
