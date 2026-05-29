@@ -8,3 +8,4 @@ __pycache__/
 crawler/__pycache__/
 .open-next/
 .wrangler/
+tsconfig.tsbuildinfo
