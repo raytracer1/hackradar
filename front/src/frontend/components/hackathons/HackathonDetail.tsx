@@ -13,11 +13,13 @@ interface HackathonDetailProps {
   prizePool: string | null;
   themes: string | string[];
   platform: { name: string; slug: string };
+  known: boolean;
+  onMarkKnown: () => void;
 }
 
 export default function HackathonDetail({
   title, description, url, imageUrl, mode, location, startDate, endDate,
-  timezone, prizePool, themes, platform,
+  timezone, prizePool, themes, platform, known, onMarkKnown,
 }: HackathonDetailProps) {
   const themeList: string[] = Array.isArray(themes) ? themes : (() => {
     if (!themes || themes === '[]') return [];
@@ -26,9 +28,19 @@ export default function HackathonDetail({
 
   return (
     <article className="mx-auto max-w-2xl animate-fade-up">
-      {imageUrl && (
-        <img src={imageUrl} alt={title} className="mb-6 h-16 w-16 rounded-xl object-cover ring-2 ring-slate-100" />
-      )}
+      <div className="flex items-start gap-3 mb-6">
+        {imageUrl && (
+          <img src={imageUrl} alt={title} className="h-16 w-16 rounded-xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
+        )}
+        <button
+          onClick={onMarkKnown}
+          className={`flex-shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition ml-auto ${
+            known ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
+          }`}
+        >
+          {known ? '✕ Unknown' : '+ Know'}
+        </button>
+      </div>
 
       <div className="mb-5 flex items-center gap-3">
         <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">

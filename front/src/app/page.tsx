@@ -32,6 +32,10 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
+  const [knownSet, setKnownSet] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('known') || '[]')); } catch { return new Set(); }
+  });
+  const [showKnown, setShowKnown] = useState(false);
   function readURLParams() {
     if (typeof window === 'undefined') return { prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' };
     const sp = new URLSearchParams(window.location.search);
@@ -74,9 +78,22 @@ export default function Home() {
   }, []);
 
   // Client-side filtering & sorting
+  const toggleKnown = (id: string) => {
+    const next = new Set(knownSet);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setKnownSet(next);
+    localStorage.setItem('known', JSON.stringify([...next]));
+  };
+
+  const knownCount = allData.filter((h) => knownSet.has(h.id)).length;
+
   const filtered = allData.filter((h) => {
     // Hide ended hackathons
     if (new Date(h.endDate).getTime() < Date.now()) return false;
+    // Known/unknown filter
+    if (showKnown && !knownSet.has(h.id)) return false;
+    if (!showKnown && knownSet.has(h.id)) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q)) return false;
@@ -155,20 +172,30 @@ export default function Home() {
             onChange={(v) => updateFilter('search', v)}
           />
         </div>
-        <HackathonFilters
-          prizeMin={filters.prizeMin}
-          prizeMax={filters.prizeMax}
-          sortBy={filters.sortBy}
-          onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
-          onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
-          onSortByChange={(v) => updateFilter('sortBy', v)}
-          onClear={() => {
-            window.history.pushState(null, '', '/');
-            setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
-            setDisplayCount(DISPLAY);
-            setSelectedId(null);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <HackathonFilters
+            prizeMin={filters.prizeMin}
+            prizeMax={filters.prizeMax}
+            sortBy={filters.sortBy}
+            onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
+            onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
+            onSortByChange={(v) => updateFilter('sortBy', v)}
+            onClear={() => {
+              window.history.pushState(null, '', '/');
+              setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
+              setDisplayCount(DISPLAY);
+              setSelectedId(null);
+            }}
+          />
+          <button
+            onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
+            className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
+              showKnown ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+            }`}
+          >
+            Known ({knownCount})
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -232,6 +259,8 @@ export default function Home() {
                       prizePool={selected.prizePool}
                       themes={selected.themes}
                       platform={selected.platform}
+                      known={knownSet.has(selected.id)}
+                      onMarkKnown={() => toggleKnown(selected.id)}
                     />
                   </div>
                 ) : (
