@@ -24,11 +24,11 @@ interface HackathonData {
   platform: { name: string; slug: string };
 }
 
-const BATCH = 20;
+const DISPLAY = 20;
 
 export default function Home() {
   const [allData, setAllData] = useState<HackathonData[]>([]);
-  const [displayCount, setDisplayCount] = useState(BATCH);
+  const [displayCount, setDisplayCount] = useState(DISPLAY);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
@@ -42,24 +42,22 @@ export default function Home() {
     return m ? parseFloat(m[0]) : 0;
   }
 
-  // Preload all pages on mount
+  // Preload all chunks in background until remaining=0
   const preloadAll = useCallback(async () => {
     setLoading(true);
     let page = 1;
     const collected: HackathonData[] = [];
-    let hasMore = true;
-
-    while (hasMore) {
-      try {
+    try {
+      while (true) {
         const res = await fetch(`/api/hackathons?page=${page}`);
         const json = await res.json();
         collected.push(...(json.data || []));
         setAllData([...collected]);
-        hasMore = json.hasMore;
+        if (json.remaining === 0) break;
         page++;
-      } catch {
-        break;
       }
+    } catch (e) {
+      console.error(e);
     }
     setLoading(false);
   }, []);
@@ -95,20 +93,20 @@ export default function Home() {
 
   const visible = filtered.slice(0, displayCount);
 
-  // Scroll → increase displayCount
+  // Scroll: increase displayCount from preloaded data
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const handleScroll = () => {
       if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-        setDisplayCount((prev) => Math.min(prev + BATCH, filtered.length));
+        setDisplayCount((prev) => Math.min(prev + DISPLAY, allData.length));
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [filtered.length]);
+  }, [allData.length]);
 
-  // Initial load
+  // Initial load: preload all chunks
   useEffect(() => {
     preloadAll();
     fetch('/api/platforms').then(async (r) => {
@@ -121,7 +119,7 @@ export default function Home() {
   const updateFilter = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    setDisplayCount(BATCH);
+    setDisplayCount(DISPLAY);
     setSelectedId(null);
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([k, v]) => { if (v) params.set(k, v); });
@@ -154,7 +152,7 @@ export default function Home() {
           onClear={() => {
             window.history.pushState(null, '', '/');
             setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
-            setDisplayCount(BATCH);
+            setDisplayCount(DISPLAY);
             setSelectedId(null);
           }}
         />

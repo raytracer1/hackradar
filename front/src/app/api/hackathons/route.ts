@@ -5,6 +5,17 @@ const PAGE_SIZE = 20;
 const CHUNK = 200;
 
 async function readR2JSON(key: string): Promise<any> {
+  // Production: Cloudflare binding (try first)
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const { env } = await getCloudflareContext({ async: true });
+    const bucket = (env as any).DATA_BUCKET;
+    if (bucket) {
+      const obj = await bucket.get(key);
+      if (obj) return await obj.json();
+    }
+  } catch { /* not in Workers */ }
+
   // Local dev: S3
   const ep = process.env.R2_ENDPOINT;
   const ak = process.env.R2_ACCESS_KEY;
@@ -29,17 +40,6 @@ async function readR2JSON(key: string): Promise<any> {
     }
   }
 
-  // Production: Cloudflare binding
-  try {
-    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
-    const { env } = await getCloudflareContext({ async: true });
-    const bucket = (env as any).DATA_BUCKET;
-    if (bucket) {
-      const obj = await bucket.get(key);
-      return obj ? await obj.json() : null;
-    }
-  } catch { /* not in Workers */ }
-
   return null;
 }
 
@@ -52,12 +52,12 @@ export async function GET(request: NextRequest) {
 
     const version = meta.version;
     const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1'));
-    const chunkIdx = Math.floor(((page - 1) * PAGE_SIZE) / CHUNK) + 1;
-    const offset = ((page - 1) * PAGE_SIZE) % CHUNK;
+    const totalCount = meta.count || 0;
+    const fileCount = meta.fileCount || 1;
 
-    const key = `hackathons-${version}-${chunkIdx}.json`;
+    const key = `hackathons-${version}-${page}.json`;
     const chunk = await readR2JSON(key);
-    const items = (chunk && Array.isArray(chunk)) ? chunk.slice(offset, offset + PAGE_SIZE) : [];
+    const items = (chunk && Array.isArray(chunk)) ? chunk : [];
 
     const enriched = items.map((h: any) => ({
       ...h,
@@ -65,14 +65,15 @@ export async function GET(request: NextRequest) {
       platform: { name: h.source.charAt(0).toUpperCase() + h.source.slice(1), slug: h.source },
     }));
 
-    const totalCount = meta.count || 0;
-    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-    const hasMore = page < totalPages;
+    const loaded = page * CHUNK;
+    const remaining = Math.max(0, totalCount - loaded);
+    const hasMore = page < fileCount;
 
     return NextResponse.json({
       data: enriched,
       hasMore,
       total: totalCount,
+      remaining,
     });
   } catch (error) {
     console.error('GET /api/hackathons error:', error);
