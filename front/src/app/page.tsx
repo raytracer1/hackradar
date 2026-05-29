@@ -32,7 +32,18 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
-  const [filters, setFilters] = useState({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
+  function readURLParams() {
+    if (typeof window === 'undefined') return { prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' };
+    const sp = new URLSearchParams(window.location.search);
+    return {
+      prizeMin: sp.get('prizeMin') || '',
+      prizeMax: sp.get('prizeMax') || '',
+      sortBy: sp.get('sortBy') || 'endDate',
+      search: sp.get('search') || '',
+    };
+  }
+
+  const [filters, setFilters] = useState(readURLParams);
   const listRef = useRef<HTMLDivElement>(null);
 
   function parsePrize(text: string | null): number {
