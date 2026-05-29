@@ -37,24 +37,24 @@ export default function HackathonListItem({
     <button
       type="button"
       onClick={onClick}
-      className={`group w-full px-4 py-3 text-left transition-all duration-150 border-b border-slate-100 hover:bg-slate-50 ${
+      className={`group w-full px-4 py-4 text-left transition-all duration-150 border-b border-slate-400 hover:bg-slate-50 ${
         selected ? 'border-l-[3px] border-l-indigo-600 bg-indigo-50/60 pl-[13px]' : 'border-l-[3px] border-l-transparent'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className={`text-sm font-medium line-clamp-2 ${selected ? 'text-indigo-700' : 'text-slate-800 group-hover:text-slate-900'}`}>
+        <span className={`text-lg font-medium line-clamp-2 ${selected ? 'text-indigo-700' : 'text-slate-900 group-hover:text-slate-950'}`}>
           {title}
         </span>
       </div>
-      <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+      <div className="mt-2 flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-sm font-medium text-slate-700">
           {platform.name}
         </span>
-        <span className="text-[11px] text-slate-400">{formatDate(startDate)} – {formatDate(endDate)}</span>
+        <span className="text-sm text-slate-500">{formatDate(startDate)} – {formatDate(endDate)}</span>
         {prizePool && (
-          <span className="text-[11px] font-semibold text-amber-600">{prizePool}</span>
+          <span className="text-sm font-semibold text-amber-600">{prizePool}</span>
         )}
-        <span className={`text-[11px] font-medium ml-auto ${urgent ? 'text-red-500' : 'text-slate-400'}`}>
+        <span className={`text-sm font-medium ml-auto ${urgent ? 'text-red-600' : 'text-slate-500'}`}>
           {left}
         </span>
       </div>
