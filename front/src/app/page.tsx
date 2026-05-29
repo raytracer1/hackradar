@@ -75,6 +75,8 @@ export default function Home() {
 
   // Client-side filtering & sorting
   const filtered = allData.filter((h) => {
+    // Hide ended hackathons
+    if (new Date(h.endDate).getTime() < Date.now()) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q)) return false;
