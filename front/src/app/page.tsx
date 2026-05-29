@@ -161,7 +161,7 @@ export default function Home() {
   return (
     <div className="space-y-4">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Discover Hackathons</h2>
+        <h1 className="text-3xl font-bold text-gray-900">Discover Hackathons</h1>
         <p className="mt-1 text-gray-500">Browse and find upcoming hackathons from across the web.</p>
       </div>
 

@@ -48,7 +48,7 @@ export default function HackathonDetail({
         </span>
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+      <h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
 
       <div className="mt-5 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:grid-cols-2">
         <div>
