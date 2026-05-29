@@ -194,7 +194,6 @@ export default function Home() {
                     key={h.id}
                     id={h.id}
                     title={h.title}
-                    mode={h.mode}
                     startDate={h.startDate}
                     endDate={h.endDate}
                     platform={h.platform}

@@ -1,4 +1,3 @@
-import HackathonStatusBadge from './HackathonStatusBadge';
 import HackathonDateBadge from './HackathonDateBadge';
 import Badge from '@/frontend/components/ui/Badge';
 
@@ -48,7 +47,6 @@ export default function HackathonDetail({
       )}
 
       <div className="mb-6 flex items-center gap-3">
-        <HackathonStatusBadge mode={mode} />
         <span className="text-sm text-gray-500">via {platform.name}</span>
       </div>
 

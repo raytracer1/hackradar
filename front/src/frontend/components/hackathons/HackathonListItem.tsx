@@ -1,9 +1,6 @@
-import HackathonStatusBadge from './HackathonStatusBadge';
-
 interface HackathonListItemProps {
   id: string;
   title: string;
-  mode: string;
   startDate: string;
   endDate: string;
   platform: { name: string; slug: string };
@@ -21,7 +18,6 @@ function formatDate(dateStr: string): string {
 
 export default function HackathonListItem({
   title,
-  mode,
   startDate,
   endDate,
   platform,
@@ -39,7 +35,6 @@ export default function HackathonListItem({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium text-gray-900 line-clamp-1">{title}</span>
-        <HackathonStatusBadge mode={mode} />
       </div>
       <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
         <span>{platform.name}</span>
