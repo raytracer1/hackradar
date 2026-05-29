@@ -1,48 +1,62 @@
 'use client';
 
-import Select from '@/frontend/components/ui/Select';
-
-interface HackathonFiltersProps {
-  mode: string;
-  platform: string;
+interface FiltersProps {
+  prizeMin: string;
+  prizeMax: string;
   sortBy: string;
-  platforms: { slug: string; name: string }[];
-  onModeChange: (v: string) => void;
-  onPlatformChange: (v: string) => void;
+  onPrizeMinChange: (v: string) => void;
+  onPrizeMaxChange: (v: string) => void;
   onSortByChange: (v: string) => void;
   onClear: () => void;
 }
 
-const modeOptions = [
-  { label: 'All Modes', value: '' },
-  { label: 'Online', value: 'online' },
-  { label: 'Offline', value: 'offline' },
-  { label: 'Hybrid', value: 'hybrid' },
-];
-
 const sortOptions = [
-  { label: 'Start Date', value: 'startDate' },
   { label: 'End Date', value: 'endDate' },
-  { label: 'Newest', value: 'createdAt' },
+  { label: 'Prize (High → Low)', value: 'prize-desc' },
+  { label: 'Prize (Low → High)', value: 'prize-asc' },
+  { label: 'Start Date', value: 'startDate' },
 ];
 
-export default function HackathonFilters({ mode, platform, sortBy, platforms, onModeChange, onPlatformChange, onSortByChange, onClear }: HackathonFiltersProps) {
-  const platformOptions = [
-    { label: 'All Platforms', value: '' },
-    ...platforms.map((p) => ({ label: p.name, value: p.slug })),
-  ];
-
-  const hasFilters = mode || platform || sortBy !== 'startDate';
+export default function HackathonFilters({
+  prizeMin, prizeMax, sortBy,
+  onPrizeMinChange, onPrizeMaxChange, onSortByChange, onClear,
+}: FiltersProps) {
+  const hasFilters = prizeMin || prizeMax || sortBy !== 'endDate';
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <Select value={mode} onChange={onModeChange} options={modeOptions} placeholder="Mode" />
-      <Select value={platform} onChange={onPlatformChange} options={platformOptions} placeholder="Platform" />
-      <Select value={sortBy} onChange={onSortByChange} options={sortOptions} />
+      <div className="flex items-center gap-2 text-sm text-gray-600">
+        <span>Prize:</span>
+        <input
+          type="text"
+          placeholder="Min"
+          value={prizeMin}
+          onChange={(e) => onPrizeMinChange(e.target.value)}
+          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+        <span>—</span>
+        <input
+          type="text"
+          placeholder="Max"
+          value={prizeMax}
+          onChange={(e) => onPrizeMaxChange(e.target.value)}
+          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+      </div>
+
+      <select
+        value={sortBy}
+        onChange={(e) => onSortByChange(e.target.value)}
+        className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+      >
+        {sortOptions.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
 
       {hasFilters && (
         <button onClick={onClear} className="text-sm text-gray-500 hover:text-gray-700">
-          Clear filters
+          Clear
         </button>
       )}
     </div>

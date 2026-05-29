@@ -24,113 +24,111 @@ interface HackathonData {
   platform: { name: string; slug: string };
 }
 
-const PAGE_SIZE = 20;
+const BATCH = 20;
 
 export default function Home() {
-  const [data, setData] = useState<HackathonData[]>([]);
-  const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [allData, setAllData] = useState<HackathonData[]>([]);
+  const [displayCount, setDisplayCount] = useState(BATCH);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [currentParams, setCurrentParams] = useState<Record<string, string>>({});
+  const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
+  const [filters, setFilters] = useState({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
   const listRef = useRef<HTMLDivElement>(null);
-  const queryRef = useRef<string>('');
 
-  const buildQuery = (overrides: Record<string, string | undefined> = {}) => {
-    const params = new URLSearchParams(window.location.search);
-    Object.entries(overrides).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-      else params.delete(k);
-    });
-    if (!params.get('status')) params.set('status', 'active');
-    return params.toString();
-  };
+  function parsePrize(text: string | null): number {
+    if (!text) return 0;
+    // Extract number from "$60,000" or "$10,000 in prizes" etc.
+    const m = text.replace(/[$,]/g, '').match(/[\d.]+/);
+    return m ? parseFloat(m[0]) : 0;
+  }
 
-  const fetchPage = async (pageNum: number, append: boolean) => {
-    const params = new URLSearchParams(queryRef.current);
-    params.set('page', String(pageNum));
-    params.set('limit', String(PAGE_SIZE));
-
-    const paramObj: Record<string, string> = {};
-    params.forEach((v, k) => { paramObj[k] = v; });
-    setCurrentParams(paramObj);
-
-    try {
-      const [hRes, pRes] = await Promise.all([
-        fetch(`/api/hackathons?${params.toString()}`),
-        fetch('/api/platforms'),
-      ]);
-      const hJson = await hRes.json();
-      const pJson = await pRes.json();
-
-      setPlatforms((pJson.data || []).map((p: any) => ({ slug: p.slug, name: p.name })));
-
-      if (append) {
-        setData((prev) => [...prev, ...(hJson.data || [])]);
-      } else {
-        setData(hJson.data || []);
-      }
-
-      const pag = hJson.pagination || { total: 0, totalPages: 0 };
-      setTotal(pag.total);
-      setHasMore(pageNum < pag.totalPages);
-      setPage(pageNum);
-    } catch (e) {
-      console.error('Failed to fetch data:', e);
-    }
-  };
-
-  const loadFirst = useCallback(async () => {
+  // Preload all pages on mount
+  const preloadAll = useCallback(async () => {
     setLoading(true);
-    setSelectedId(null);
-    await fetchPage(1, false);
+    let page = 1;
+    const collected: HackathonData[] = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      try {
+        const res = await fetch(`/api/hackathons?page=${page}`);
+        const json = await res.json();
+        collected.push(...(json.data || []));
+        setAllData([...collected]);
+        hasMore = json.hasMore;
+        page++;
+      } catch {
+        break;
+      }
+    }
     setLoading(false);
   }, []);
 
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    await fetchPage(page + 1, true);
-    setLoadingMore(false);
-  }, [page, hasMore, loadingMore]);
+  // Client-side filtering & sorting
+  const filtered = allData.filter((h) => {
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q)) return false;
+    }
+    if (filters.prizeMin) {
+      if (parsePrize(h.prizePool) < parseFloat(filters.prizeMin)) return false;
+    }
+    if (filters.prizeMax) {
+      if (parsePrize(h.prizePool) > parseFloat(filters.prizeMax)) return false;
+    }
+    return true;
+  });
 
-  // Scroll detection for infinite loading
+  switch (filters.sortBy) {
+    case 'prize-desc':
+      filtered.sort((a, b) => parsePrize(b.prizePool) - parsePrize(a.prizePool));
+      break;
+    case 'prize-asc':
+      filtered.sort((a, b) => parsePrize(a.prizePool) - parsePrize(b.prizePool));
+      break;
+    case 'startDate':
+      filtered.sort((a: any, b: any) => String(a.startDate || '').localeCompare(String(b.startDate || '')));
+      break;
+    default: // endDate
+      filtered.sort((a: any, b: any) => String(a.endDate || '').localeCompare(String(b.endDate || '')));
+  }
+
+  const visible = filtered.slice(0, displayCount);
+
+  // Scroll → increase displayCount
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const handleScroll = () => {
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 100) {
-        loadMore();
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+        setDisplayCount((prev) => Math.min(prev + BATCH, filtered.length));
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [loadMore]);
+  }, [filtered.length]);
 
   // Initial load
   useEffect(() => {
-    queryRef.current = buildQuery();
-    loadFirst();
+    preloadAll();
+    fetch('/api/platforms').then(async (r) => {
+      const json = await r.json();
+      setPlatforms((json.data || []).map((p: any) => ({ slug: p.slug, name: p.name })));
+    }).catch(() => {});
   }, []);
 
-  const pushParams = (updates: Record<string, string | undefined>) => {
-    const params = new URLSearchParams(window.location.search);
-    Object.entries(updates).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-      else params.delete(k);
-    });
-    // Remove page when changing filters
-    params.delete('page');
-    const qs = params.toString();
-    window.history.pushState(null, '', qs ? `?${qs}` : window.location.pathname);
-    queryRef.current = buildQuery();
-    loadFirst();
+  // Filter change → reset display
+  const updateFilter = (key: string, value: string) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    setDisplayCount(BATCH);
+    setSelectedId(null);
+    const params = new URLSearchParams();
+    Object.entries(newFilters).forEach(([k, v]) => { if (v) params.set(k, v); });
+    window.history.pushState(null, '', params.toString() ? `?${params.toString()}` : '/');
   };
 
-  const selected = data.find((h) => h.id === selectedId) || null;
+  const selected = allData.find((h) => h.id === selectedId) || null;
 
   return (
     <div className="space-y-4">
@@ -142,22 +140,22 @@ export default function Home() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72">
           <HackathonSearchBar
-            value={currentParams.search || ''}
-            onChange={(v) => pushParams({ search: v || undefined })}
+            value={filters.search}
+            onChange={(v) => updateFilter('search', v)}
           />
         </div>
         <HackathonFilters
-          mode={currentParams.mode || ''}
-          platform={currentParams.platform || ''}
-          sortBy={currentParams.sortBy || 'startDate'}
-          platforms={platforms}
-          onModeChange={(v) => pushParams({ mode: v || undefined })}
-          onPlatformChange={(v) => pushParams({ platform: v || undefined })}
-          onSortByChange={(v) => pushParams({ sortBy: v || undefined })}
+          prizeMin={filters.prizeMin}
+          prizeMax={filters.prizeMax}
+          sortBy={filters.sortBy}
+          onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
+          onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
+          onSortByChange={(v) => updateFilter('sortBy', v)}
           onClear={() => {
             window.history.pushState(null, '', '/');
-            queryRef.current = buildQuery();
-            loadFirst();
+            setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
+            setDisplayCount(BATCH);
+            setSelectedId(null);
           }}
         />
       </div>
@@ -178,9 +176,9 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-500">{total} hackathon{total !== 1 ? 's' : ''} found</p>
+          <p className="text-sm text-gray-500">{filtered.length} hackathon{filtered.length !== 1 ? 's' : ''} found</p>
 
-          {data.length === 0 ? (
+          {filtered.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden" style={{ minHeight: 500 }}>
@@ -189,7 +187,7 @@ export default function Home() {
                 className="w-full sm:w-96 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
                 style={{ maxHeight: 'calc(100vh - 280px)' }}
               >
-                {data.map((h) => (
+                {visible.map((h) => (
                   <HackathonListItem
                     key={h.id}
                     id={h.id}
@@ -202,7 +200,7 @@ export default function Home() {
                     onClick={() => setSelectedId(h.id)}
                   />
                 ))}
-                {loadingMore && (
+                {displayCount < filtered.length && (
                   <div className="p-4 text-center text-sm text-gray-400">Loading more...</div>
                 )}
               </div>

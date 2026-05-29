@@ -1,66 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentHackathons } from '@/backend/lib/data';
-import type { HackathonData } from '@/backend/lib/data';
 
-function enrich(h: HackathonData) {
-  const platformName = h.source.charAt(0).toUpperCase() + h.source.slice(1);
-  return {
-    ...h,
-    id: h.sourceId,
-    platform: { name: platformName, slug: h.source },
-    clusterKey: '',
-    slug: h.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').slice(0, 100),
-  };
+const META_KEY = 'meta.json';
+const PAGE_SIZE = 20;
+const CHUNK = 200;
+
+async function readR2JSON(key: string): Promise<any> {
+  // Local dev: S3
+  const ep = process.env.R2_ENDPOINT;
+  const ak = process.env.R2_ACCESS_KEY;
+  const sk = process.env.R2_SECRET_KEY;
+  const bn = process.env.R2_BUCKET || 'hackradar-data';
+
+  if (ep && ak && sk) {
+    try {
+      const { GetObjectCommand, S3Client } = await import('@aws-sdk/client-s3');
+      const s3 = new S3Client({
+        region: 'auto',
+        endpoint: ep,
+        credentials: { accessKeyId: ak, secretAccessKey: sk },
+        forcePathStyle: true,
+      });
+      const resp = await s3.send(new GetObjectCommand({ Bucket: bn, Key: key }));
+      const body = await resp.Body?.transformToString();
+      return body ? JSON.parse(body) : null;
+    } catch (e: any) {
+      console.error(`S3 error ${key}:`, e.message);
+      return null;
+    }
+  }
+
+  // Production: Cloudflare binding
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const { env } = await getCloudflareContext({ async: true });
+    const bucket = (env as any).DATA_BUCKET;
+    if (bucket) {
+      const obj = await bucket.get(key);
+      return obj ? await obj.json() : null;
+    }
+  } catch { /* not in Workers */ }
+
+  return null;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    let data = (await getCurrentHackathons()).map(enrich);
-    const sp = request.nextUrl.searchParams;
-
-    const status = sp.get('status') || 'active';
-    data = data.filter((h) => h.status === status);
-
-    const mode = sp.get('mode');
-    if (mode) data = data.filter((h) => h.mode === mode);
-
-    const platform = sp.get('platform');
-    if (platform) data = data.filter((h) => h.source === platform);
-
-    const search = sp.get('search');
-    if (search) {
-      const q = search.toLowerCase();
-      data = data.filter(
-        (h) =>
-          h.title.toLowerCase().includes(q) ||
-          (h.description || '').toLowerCase().includes(q)
-      );
+    const meta = await readR2JSON(META_KEY);
+    if (!meta) {
+      return NextResponse.json({ data: [], hasMore: false, total: 0 });
     }
 
-    const fromDate = sp.get('fromDate');
-    if (fromDate) data = data.filter((h) => h.startDate >= fromDate);
+    const version = meta.version;
+    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1'));
+    const chunkIdx = Math.floor(((page - 1) * PAGE_SIZE) / CHUNK) + 1;
+    const offset = ((page - 1) * PAGE_SIZE) % CHUNK;
 
-    const toDate = sp.get('toDate');
-    if (toDate) data = data.filter((h) => h.startDate <= toDate);
+    const key = `hackathons-${version}-${chunkIdx}.json`;
+    const chunk = await readR2JSON(key);
+    const items = (chunk && Array.isArray(chunk)) ? chunk.slice(offset, offset + PAGE_SIZE) : [];
 
-    const sortBy = sp.get('sortBy') || 'startDate';
-    const sortOrder = sp.get('sortOrder') || 'asc';
-    data.sort((a: any, b: any) => {
-      const va = a[sortBy] || '';
-      const vb = b[sortBy] || '';
-      return sortOrder === 'desc' ? String(vb).localeCompare(String(va)) : String(va).localeCompare(String(vb));
-    });
+    const enriched = items.map((h: any) => ({
+      ...h,
+      id: h.sourceId,
+      platform: { name: h.source.charAt(0).toUpperCase() + h.source.slice(1), slug: h.source },
+    }));
 
-    const page = Math.max(1, parseInt(sp.get('page') || '1'));
-    const limit = Math.min(100, Math.max(1, parseInt(sp.get('limit') || '20')));
-    const total = data.length;
-    const totalPages = Math.ceil(total / limit);
-    const skip = (page - 1) * limit;
-    const paged = data.slice(skip, skip + limit);
+    const totalCount = meta.count || 0;
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const hasMore = page < totalPages;
 
     return NextResponse.json({
-      data: paged,
-      pagination: { page, limit, total, totalPages },
+      data: enriched,
+      hasMore,
+      total: totalCount,
     });
   } catch (error) {
     console.error('GET /api/hackathons error:', error);
