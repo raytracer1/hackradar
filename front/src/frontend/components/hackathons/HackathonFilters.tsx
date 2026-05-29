@@ -24,30 +24,26 @@ export default function HackathonFilters({
   const hasFilters = prizeMin || prizeMax || sortBy !== 'endDate';
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <span>Prize:</span>
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">$</span>
         <input
-          type="text"
-          placeholder="Min"
-          value={prizeMin}
-          onChange={(e) => onPrizeMinChange(e.target.value)}
-          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+          type="text" placeholder="Min"
+          value={prizeMin} onChange={(e) => onPrizeMinChange(e.target.value)}
+          className="w-16 text-xs text-slate-700 placeholder-slate-300 outline-none bg-transparent"
         />
-        <span>—</span>
+        <span className="text-slate-300">–</span>
         <input
-          type="text"
-          placeholder="Max"
-          value={prizeMax}
-          onChange={(e) => onPrizeMaxChange(e.target.value)}
-          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+          type="text" placeholder="Max"
+          value={prizeMax} onChange={(e) => onPrizeMaxChange(e.target.value)}
+          className="w-16 text-xs text-slate-700 placeholder-slate-300 outline-none bg-transparent"
         />
       </div>
 
       <select
         value={sortBy}
         onChange={(e) => onSortByChange(e.target.value)}
-        className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       >
         {sortOptions.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -55,7 +51,7 @@ export default function HackathonFilters({
       </select>
 
       {hasFilters && (
-        <button onClick={onClear} className="text-sm text-gray-500 hover:text-gray-700">
+        <button onClick={onClear} className="text-xs font-medium text-slate-400 hover:text-slate-600 transition">
           Clear
         </button>
       )}
