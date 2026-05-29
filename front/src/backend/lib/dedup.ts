@@ -1,5 +1,3 @@
-import crypto from 'crypto';
-
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
@@ -9,9 +7,17 @@ function normalizeTitle(title: string): string {
     .trim();
 }
 
-export function computeClusterKey(title: string, startDate: Date): string {
+async function sha256hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function computeClusterKey(title: string, startDate: string): Promise<string> {
   const normalized = normalizeTitle(title);
-  const monthKey = startDate.toISOString().slice(0, 7);
+  const monthKey = startDate.slice(0, 7);
   const raw = `${normalized}|${monthKey}`;
-  return crypto.createHash('sha256').update(raw).digest('hex');
+  return sha256hex(raw);
 }

@@ -1,0 +1,18 @@
+{
+	"$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+	"name": "hackradar",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2025-06-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"r2_buckets": [
+		{
+			"binding": "DATA_BUCKET",
+			"bucket_name": "hackradar-data"
+		}
+	],
+	"vars": {
+		"CRAWLER_API_KEY": "0a208df58172896ac39a5088812643c8a52efb533ac3e024ac041fc685a44f66"
+	}
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getHackathon, markEnded } from '@/backend/services/hackathon-service';
+import { getHackathon, markEnded } from '@/backend/lib/data';
 
 export async function GET(
   _request: NextRequest,
