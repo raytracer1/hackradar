@@ -161,8 +161,8 @@ export default function Home() {
   return (
     <div className="space-y-4">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Discover Hackathons</h1>
-        <p className="mt-1 text-gray-500">Browse and find upcoming hackathons from across the web.</p>
+        <h1 className="text-3xl font-bold text-gray-900">Discover money from Hackathons</h1>
+        <p className="mt-1 text-gray-500">Browse and find upcoming hackathons which reward cash from across the web.</p>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

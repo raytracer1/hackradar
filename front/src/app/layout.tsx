@@ -11,35 +11,37 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'HackRadar - Discover Hackathons',
+    default: 'Discover Cash Prize Hackathons — HackRadar',
     template: '%s | HackRadar',
   },
-  description: 'Aggregate and discover upcoming hackathons from Devpost, MLH, HackerEarth, Devfolio, and more. Find coding competitions, prizes, and deadlines all in one place.',
+  description: 'Find hackathons with cash prizes and money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio that pay real money. Discover cash prize hackathons now.',
   keywords: [
-    'hackathons', 'coding competitions', 'tech events', 'hackathon aggregator',
+    'cash prize hackathons', 'hackathons with money', 'coding competitions with cash',
+    'hackathon prizes', 'money rewards', 'cash rewards', 'tech events',
     'Devpost', 'MLH', 'Major League Hacking', 'HackerEarth', 'Devfolio',
     'programming contests', 'software competitions', 'online hackathons',
+    'hackathons that pay', 'hackathon aggregator',
   ],
   openGraph: {
     type: 'website',
     locale: 'en_US',
     siteName: 'HackRadar',
-    title: 'HackRadar - Discover Hackathons',
-    description: 'Aggregate and discover upcoming hackathons from Devpost, MLH, HackerEarth, Devfolio, and more.',
+    title: 'Discover Cash Prize Hackathons — HackRadar',
+    description: 'Find hackathons with cash prizes and money rewards. Browse coding competitions that pay real money from Devpost, MLH, HackerEarth, and more.',
     url: baseUrl,
     images: [
       {
         url: '/og-default.png',
         width: 1200,
         height: 630,
-        alt: 'HackRadar - Discover Hackathons',
+        alt: 'Discover cash prize hackathons with HackRadar',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HackRadar - Discover Hackathons',
-    description: 'Aggregate and discover upcoming hackathons from Devpost, MLH, HackerEarth, Devfolio, and more.',
+    title: 'Discover Cash Prize Hackathons — HackRadar',
+    description: 'Find hackathons with cash prizes and money rewards. Browse coding competitions that pay real money.',
     images: ['/og-default.png'],
   },
   robots: {
@@ -99,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 '@id': `${baseUrl}/#website`,
                 url: baseUrl,
                 name: 'HackRadar',
-                description: 'Aggregate and discover upcoming hackathons from Devpost, MLH, HackerEarth, Devfolio, and more.',
+                description: 'Discover cash prize hackathons with real money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio, and more.',
                 inLanguage: 'en-US',
                 potentialAction: {
                   '@type': 'SearchAction',
@@ -116,7 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 name: 'HackRadar',
                 url: baseUrl,
                 logo: `${baseUrl}/og-default.png`,
-                description: 'Aggregate and discover upcoming hackathons from Devpost, MLH, HackerEarth, Devfolio, and more.',
+                description: 'Discover cash prize hackathons with real money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio, and more.',
               },
             ],
           }}
