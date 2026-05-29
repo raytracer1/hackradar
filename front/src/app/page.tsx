@@ -189,7 +189,7 @@ export default function Home() {
           />
           <button
             onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
-            className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
+            className={`inline-flex items-center rounded-xl border px-3 h-10 text-xs font-medium transition ${
               showKnown ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
             }`}
           >
