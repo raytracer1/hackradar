@@ -214,7 +214,7 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="flex flex-1 flex-col overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+              <div className="flex flex-1 flex-col">
                 {selected ? (
                   <div className="p-6">
                     <HackathonDetail
