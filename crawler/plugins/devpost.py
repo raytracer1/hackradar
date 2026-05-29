@@ -99,6 +99,37 @@ class DevpostPlugin(BasePlugin):
         return re.sub(r"<[^>]+>", "", text).strip()
 
     @staticmethod
+    def _parse_time_left(text: str) -> datetime | None:
+        """Parse 'about 2 hours left' or '13 days left' into precise datetime."""
+        if not text:
+            return None
+        import re
+        from datetime import timedelta
+        text = text.lower().strip()
+        # "about 2 hours left" → timedelta(hours=2)
+        m = re.match(r'(?:about\s+)?(\d+)\s+(minute|hour|day|week|month)s?\s+left', text)
+        if m:
+            num = int(m.group(1))
+            unit = m.group(2)
+            now = datetime.utcnow()
+            if unit == 'minute':
+                return now + timedelta(minutes=num)
+            elif unit == 'hour':
+                return now + timedelta(hours=num)
+            elif unit == 'day':
+                return now + timedelta(days=num)
+            elif unit == 'week':
+                return now + timedelta(weeks=num)
+            elif unit == 'month':
+                return now + timedelta(days=num * 30)
+        # "a few hours left" / "less than an hour left"
+        if 'hour' in text:
+            return datetime.utcnow() + timedelta(hours=1)
+        if 'minute' in text or 'less than' in text:
+            return datetime.utcnow() + timedelta(minutes=30)
+        return None
+
+    @staticmethod
     def _parse_period(period: str) -> tuple[datetime | None, datetime | None]:
         """Parse Devpost submission_period_dates like 'Jun 1 – Aug 31, 2026'."""
         if not period:
@@ -141,8 +172,9 @@ class DevpostPlugin(BasePlugin):
         if not source_id:
             source_id = url.rstrip("/").split("/")[-1]
 
-        # Parse dates - Devpost uses "submission_period_dates" like "Jun 1 - Aug 31, 2026"
-        start_date, end_date = self._parse_period(h.get("submission_period_dates", ""))
+        # Parse dates - submission_period_dates for start, time_left for precise end
+        start_date, _ = self._parse_period(h.get("submission_period_dates", ""))
+        end_date = self._parse_time_left(h.get("time_left_to_submission", "")) or start_date
         themes_raw = h.get("themes", h.get("tags", []))
         themes: list[str] = []
         if isinstance(themes_raw, str):

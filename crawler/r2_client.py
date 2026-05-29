@@ -92,12 +92,13 @@ def upload_hackathons(items: list[dict]) -> bool:
             _write_json(s3, key, chunk)
             logger.info(f"Uploaded chunk {i + 1}/{chunk_count}: {key} ({len(chunk)} items)")
 
+        now = datetime.utcnow().isoformat() + "Z"
         # Update meta
         new_meta = {
             "version": version,
             "count": len(items),
             "fileCount": chunk_count,
-            "updated_at": datetime.utcnow().isoformat() + "Z",
+            "crawledAt": now,
         }
         _write_json(s3, META_KEY, new_meta)
         logger.info(f"Uploaded meta.json: version={version}, count={len(items)}, fileCount={chunk_count}")
