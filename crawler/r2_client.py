@@ -1,7 +1,7 @@
 import json
 import logging
 import boto3
-from datetime import datetime
+from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
 from config import R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET
@@ -21,7 +21,7 @@ def get_s3_client():
 
 
 def _make_version() -> str:
-    return datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
 
 def _read_json(s3, key: str) -> dict | list | None:
@@ -92,7 +92,7 @@ def upload_hackathons(items: list[dict]) -> bool:
             _write_json(s3, key, chunk)
             logger.info(f"Uploaded chunk {i + 1}/{chunk_count}: {key} ({len(chunk)} items)")
 
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat()
         # Update meta
         new_meta = {
             "version": version,

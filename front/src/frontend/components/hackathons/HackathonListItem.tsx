@@ -13,19 +13,25 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function daysUntil(dateStr: string): string {
+function timeLeft(dateStr: string): string {
   const diff = new Date(dateStr).getTime() - Date.now();
-  const days = Math.ceil(diff / 86400000);
-  if (days < 0) return 'Ended';
-  if (days === 0) return 'Ends today';
-  if (days === 1) return '1 day left';
-  return `${days}d left`;
+  if (diff < 0) return 'Ended';
+  const hours = diff / 3600000;
+  if (hours < 24) {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    if (h === 0 && m === 0) return 'Ends now';
+    if (h === 0) return `${m}m left`;
+    return `${h}h ${m}m left`;
+  }
+  return `${Math.floor(hours / 24)}d left`;
 }
 
 export default function HackathonListItem({
   title, startDate, endDate, platform, prizePool, selected, onClick,
 }: HackathonListItemProps) {
-  const urgent = daysUntil(endDate).startsWith('Ends') || daysUntil(endDate).endsWith('left') && parseInt(daysUntil(endDate)) <= 3;
+  const left = timeLeft(endDate);
+  const urgent = left.includes('h') || left.includes('m') || left === 'Ends now';
 
   return (
     <button
@@ -49,7 +55,7 @@ export default function HackathonListItem({
           <span className="text-[11px] font-semibold text-amber-600">{prizePool}</span>
         )}
         <span className={`text-[11px] font-medium ml-auto ${urgent ? 'text-red-500' : 'text-slate-400'}`}>
-          {daysUntil(endDate)}
+          {left}
         </span>
       </div>
     </button>

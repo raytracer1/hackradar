@@ -1,6 +1,6 @@
 import httpx
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from plugins.base import BasePlugin
 from models import HackathonItem
@@ -111,7 +111,7 @@ class DevpostPlugin(BasePlugin):
         if m:
             num = int(m.group(1))
             unit = m.group(2)
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             if unit == 'minute':
                 return now + timedelta(minutes=num)
             elif unit == 'hour':
@@ -124,7 +124,7 @@ class DevpostPlugin(BasePlugin):
                 return now + timedelta(days=num * 30)
         # "a few hours left" / "less than an hour left"
         if 'hour' in text:
-            return datetime.utcnow() + timedelta(hours=1)
+            return datetime.now(timezone.utc) + timedelta(hours=1)
         if 'minute' in text or 'less than' in text:
             return datetime.utcnow() + timedelta(minutes=30)
         return None
@@ -139,22 +139,22 @@ class DevpostPlugin(BasePlugin):
             parts = [p.strip() for p in re.split(r'\s[–\-—]\s', period, 1)]
             if len(parts) != 2:
                 from dateutil.parser import parse
-                dt = parse(period)
+                dt = parse(period).replace(tzinfo=timezone.utc)
                 return dt, dt
 
             start_str = parts[0]
             end_str = parts[1]
             from dateutil.parser import parse
-            start = parse(start_str)
+            start = parse(start_str).replace(tzinfo=timezone.utc)
             try:
-                end = parse(end_str)
+                end = parse(end_str).replace(tzinfo=timezone.utc)
             except Exception:
                 # "31, 2026" or "29, 2026" → need month from start
                 try:
-                    end = parse(f"{start.strftime('%b')} {end_str}")
+                    end = parse(f"{start.strftime('%b')} {end_str}").replace(tzinfo=timezone.utc)
                 except Exception:
                     try:
-                        end = parse(f"{end_str}, {start.year}")
+                        end = parse(f"{end_str}, {start.year}").replace(tzinfo=timezone.utc)
                     except Exception:
                         end = start
             return start, end
@@ -172,9 +172,10 @@ class DevpostPlugin(BasePlugin):
         if not source_id:
             source_id = url.rstrip("/").split("/")[-1]
 
-        # Parse dates - submission_period_dates for start, time_left for precise end
-        start_date, _ = self._parse_period(h.get("submission_period_dates", ""))
-        end_date = self._parse_time_left(h.get("time_left_to_submission", "")) or start_date
+        start_date, end_date = self._parse_period(h.get("submission_period_dates", ""))
+        precise_end = self._parse_time_left(h.get("time_left_to_submission", ""))
+        if precise_end:
+            end_date = precise_end
         themes_raw = h.get("themes", h.get("tags", []))
         themes: list[str] = []
         if isinstance(themes_raw, str):
@@ -204,8 +205,8 @@ class DevpostPlugin(BasePlugin):
             image_url=h.get("thumbnail_url"),
             mode=self._guess_mode(loc_str),
             location=loc_str or None,
-            start_date=start_date or datetime.now(),
-            end_date=end_date or datetime.now(),
+            start_date=start_date or datetime.now(timezone.utc),
+            end_date=end_date or start_date or datetime.now(timezone.utc),
             prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
         )
