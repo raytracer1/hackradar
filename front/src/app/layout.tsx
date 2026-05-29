@@ -5,6 +5,7 @@ import Footer from '@/frontend/components/layout/Footer';
 import './globals.css';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || '';
+const ADS_ID = process.env.NEXT_PUBLIC_ADS_ID || '';
 
 export const metadata: Metadata = {
   title: 'HackRadar - Discover Hackathons',
@@ -15,6 +16,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {ADS_ID && (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS_ID}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        )}
         {GA_ID && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
