@@ -222,7 +222,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden">
               <div
                 ref={listRef}
-                className="w-full sm:w-96 flex-shrink-0 self-stretch border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
+                className="w-full sm:w-1/3 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
                 style={{ maxHeight: 'calc(100vh - 280px)' }}
               >
                   {visible.map((h) => (
@@ -243,9 +243,9 @@ export default function Home() {
                   )}
                 </div>
 
-              <div className="flex flex-1 flex-col">
+              <div className="flex w-2/3 flex-col">
                 {selected ? (
-                  <div className="p-6">
+                  <div className="w-full h-full px-[2.5rem] py-4">
                     <HackathonDetail
                       title={selected.title}
                       description={selected.description}
@@ -264,7 +264,7 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="flex h-full flex-col items-center justify-center p-8 text-center text-gray-400">
+                  <div className="flex h-full flex-col items-center justify-center p-4 text-center text-gray-400">
                     <div className="mb-3 text-5xl">←</div>
                     <p className="text-sm">Select a hackathon from the list</p>
                     <p className="mt-1 text-xs">to view details here</p>

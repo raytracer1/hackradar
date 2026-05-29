@@ -27,8 +27,8 @@ export default function HackathonDetail({
   })();
 
   return (
-    <article className="mx-auto max-w-2xl animate-fade-up">
-      <div className="flex items-start gap-3 mb-6">
+    <article className="flex flex-col h-full justify-between animate-fade-up">
+      <div className="flex items-start gap-3">
         {imageUrl && (
           <img src={imageUrl} alt={title} className="h-16 w-16 rounded-xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
         )}
@@ -42,15 +42,15 @@ export default function HackathonDetail({
         </button>
       </div>
 
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3">
         <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
           {platform.name}
         </span>
       </div>
 
-      <h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
+      <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
 
-      <div className="mt-5 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:grid-cols-2">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Dates</span>
           <p className="mt-0.5 text-sm text-slate-700">
@@ -74,7 +74,7 @@ export default function HackathonDetail({
       </div>
 
       {themeList.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {themeList.map((t) => (
             <span key={t} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-600">{t}</span>
           ))}
@@ -82,7 +82,7 @@ export default function HackathonDetail({
       )}
 
       {description && (
-        <div className="mt-6">
+        <div className="mt-4 min-h-0 overflow-y-auto">
           <h2 className="mb-2 text-sm font-semibold text-slate-900">About</h2>
           <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{description}</div>
         </div>
@@ -92,7 +92,7 @@ export default function HackathonDetail({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow-md active:scale-[0.98]"
+        className="mt-4 inline-flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow-md active:scale-[0.98]"
       >
         Apply on {platform.name}
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
