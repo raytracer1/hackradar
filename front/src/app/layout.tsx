@@ -17,11 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         {ADS_ID && (
-          <Script
+          <script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS_ID}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
           />
         )}
         {GA_ID && (
