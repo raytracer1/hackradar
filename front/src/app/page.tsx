@@ -223,7 +223,7 @@ export default function Home() {
               <div
                 ref={listRef}
                 className="w-full sm:w-1/3 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
-                style={{ maxHeight: 'calc(100vh - 280px)' }}
+                style={{ maxHeight: 'calc(100vh - 240px)' }}
               >
                   {visible.map((h) => (
                     <HackathonListItem
