@@ -125,7 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
-        <main className="mx-auto max-w-7xl px-4 pt-2 pb-8 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-7xl px-4 pt-4 pb-8 sm:px-6 lg:px-8">
           {children}
         </main>
         <Footer />
