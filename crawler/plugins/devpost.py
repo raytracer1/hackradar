@@ -100,29 +100,32 @@ class DevpostPlugin(BasePlugin):
 
     @staticmethod
     def _parse_period(period: str) -> tuple[datetime | None, datetime | None]:
-        """Parse Devpost submission_period_dates like 'Jun 1 - Aug 31, 2026'."""
+        """Parse Devpost submission_period_dates like 'Jun 1 – Aug 31, 2026'."""
         if not period:
             return None, None
         try:
-            parts = [p.strip() for p in period.split("-", 1)]
+            import re
+            parts = [p.strip() for p in re.split(r'\s[–\-—]\s', period, 1)]
             if len(parts) != 2:
-                # "Jun 1, 2026" single date
                 from dateutil.parser import parse
-                dt = parse(parts[0])
+                dt = parse(period)
                 return dt, dt
+
             start_str = parts[0]
             end_str = parts[1]
-            # "Aug 31, 2026" or "Aug 31" with implicit year from start
             from dateutil.parser import parse
             start = parse(start_str)
             try:
                 end = parse(end_str)
             except Exception:
-                # end might be "Aug 31" without year
+                # "31, 2026" or "29, 2026" → need month from start
                 try:
-                    end = parse(f"{end_str}, {start.year}")
+                    end = parse(f"{start.strftime('%b')} {end_str}")
                 except Exception:
-                    end = start
+                    try:
+                        end = parse(f"{end_str}, {start.year}")
+                    except Exception:
+                        end = start
             return start, end
         except Exception:
             return None, None
