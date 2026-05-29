@@ -53,13 +53,17 @@ class Scheduler:
         """Run all plugins, combine results, and upload to R2."""
         logger.info(f"Starting crawl cycle with {len(self.plugins)} plugins")
 
+        seen = set()
         all_items: list[dict] = []
         for plugin in self.plugins:
             try:
                 logger.info(f"Running plugin: {plugin.name}")
                 items = await plugin.fetch()
                 for item in items:
-                    all_items.append(item_to_dict(item))
+                    d = item_to_dict(item)
+                    if d["sourceId"] not in seen:
+                        seen.add(d["sourceId"])
+                        all_items.append(d)
                 logger.info(f"Plugin {plugin.name}: {len(items)} scraped")
             except Exception as e:
                 logger.error(f"Plugin {plugin.name} failed: {e}", exc_info=True)

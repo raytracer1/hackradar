@@ -25,7 +25,7 @@ class DevpostPlugin(BasePlugin):
             try:
                 resp = await client.get(
                     "https://devpost.com/api/hackathons",
-                    params={"status": "upcoming"},
+                    params={"status": "open"},
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -74,6 +74,13 @@ class DevpostPlugin(BasePlugin):
             logger.error(f"Devpost HTML fallback failed: {e}")
             return []
 
+    @staticmethod
+    def _strip_html(text: str | None) -> str | None:
+        import re
+        if not text:
+            return text
+        return re.sub(r"<[^>]+>", "", text).strip()
+
     def _parse(self, h: dict) -> HackathonItem | None:
         title = h.get("title", "").strip()
         url = h.get("url", "")
@@ -89,25 +96,32 @@ class DevpostPlugin(BasePlugin):
         start_str = h.get("submission_period_dates", h.get("start_date", ""))
         end_str = h.get("submission_period_dates", h.get("end_date", ""))
 
-        # Parse themes
+        # Parse themes (Devpost returns list of dicts)
         themes_raw = h.get("themes", h.get("tags", []))
+        themes: list[str] = []
         if isinstance(themes_raw, str):
             themes = [t.strip() for t in themes_raw.split(",") if t.strip()]
-        else:
-            themes = themes_raw if isinstance(themes_raw, list) else []
+        elif isinstance(themes_raw, list):
+            for t in themes_raw:
+                if isinstance(t, dict):
+                    name = t.get("name", "")
+                    if name:
+                        themes.append(name)
+                elif isinstance(t, str):
+                    themes.append(t)
 
         return HackathonItem(
             source_id=f"devpost_{source_id}",
             source="devpost",
             title=title,
-            description=h.get("description", h.get("excerpt", "")),
+            description=self._strip_html(h.get("description", h.get("excerpt", ""))),
             url=url,
             image_url=h.get("thumbnail_url", h.get("image_url")),
             mode=self._guess_mode(h),
             location=h.get("location"),
             start_date=datetime.now(),
             end_date=datetime.now(),
-            prize_pool=h.get("prize_amount"),
+            prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
         )
 
