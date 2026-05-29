@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import HackathonListItem from '@/frontend/components/hackathons/HackathonListItem';
 import HackathonDetail from '@/frontend/components/hackathons/HackathonDetail';
 import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters';
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
-import Pagination from '@/frontend/components/ui/Pagination';
 import EmptyState from '@/frontend/components/ui/EmptyState';
 import Skeleton from '@/frontend/components/ui/Skeleton';
 
@@ -25,25 +24,36 @@ interface HackathonData {
   platform: { name: string; slug: string };
 }
 
-function getSearchParams(): URLSearchParams {
-  if (typeof window === 'undefined') return new URLSearchParams();
-  return new URLSearchParams(window.location.search);
-}
+const PAGE_SIZE = 20;
 
 export default function Home() {
   const [data, setData] = useState<HackathonData[]>([]);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [currentParams, setCurrentParams] = useState<Record<string, string>>({});
+  const listRef = useRef<HTMLDivElement>(null);
+  const queryRef = useRef<string>('');
 
-  const fetchData = async (sp: URLSearchParams) => {
-    setLoading(true);
-    const params = new URLSearchParams(sp.toString());
+  const buildQuery = (overrides: Record<string, string | undefined> = {}) => {
+    const params = new URLSearchParams(window.location.search);
+    Object.entries(overrides).forEach(([k, v]) => {
+      if (v) params.set(k, v);
+      else params.delete(k);
+    });
     if (!params.get('status')) params.set('status', 'active');
+    return params.toString();
+  };
 
-    // Save current params for filter UI
+  const fetchPage = async (pageNum: number, append: boolean) => {
+    const params = new URLSearchParams(queryRef.current);
+    params.set('page', String(pageNum));
+    params.set('limit', String(PAGE_SIZE));
+
     const paramObj: Record<string, string> = {};
     params.forEach((v, k) => { paramObj[k] = v; });
     setCurrentParams(paramObj);
@@ -56,17 +66,54 @@ export default function Home() {
       const hJson = await hRes.json();
       const pJson = await pRes.json();
 
-      setData(hJson.data || []);
-      setPagination(hJson.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
       setPlatforms((pJson.data || []).map((p: any) => ({ slug: p.slug, name: p.name })));
+
+      if (append) {
+        setData((prev) => [...prev, ...(hJson.data || [])]);
+      } else {
+        setData(hJson.data || []);
+      }
+
+      const pag = hJson.pagination || { total: 0, totalPages: 0 };
+      setTotal(pag.total);
+      setHasMore(pageNum < pag.totalPages);
+      setPage(pageNum);
     } catch (e) {
       console.error('Failed to fetch data:', e);
     }
-    setLoading(false);
   };
 
+  const loadFirst = useCallback(async () => {
+    setLoading(true);
+    setSelectedId(null);
+    await fetchPage(1, false);
+    setLoading(false);
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    await fetchPage(page + 1, true);
+    setLoadingMore(false);
+  }, [page, hasMore, loadingMore]);
+
+  // Scroll detection for infinite loading
   useEffect(() => {
-    fetchData(getSearchParams());
+    const el = listRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 100) {
+        loadMore();
+      }
+    };
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
+
+  // Initial load
+  useEffect(() => {
+    queryRef.current = buildQuery();
+    loadFirst();
   }, []);
 
   const pushParams = (updates: Record<string, string | undefined>) => {
@@ -75,9 +122,12 @@ export default function Home() {
       if (v) params.set(k, v);
       else params.delete(k);
     });
+    // Remove page when changing filters
+    params.delete('page');
     const qs = params.toString();
     window.history.pushState(null, '', qs ? `?${qs}` : window.location.pathname);
-    fetchData(params);
+    queryRef.current = buildQuery();
+    loadFirst();
   };
 
   const selected = data.find((h) => h.id === selectedId) || null;
@@ -93,7 +143,7 @@ export default function Home() {
         <div className="w-full sm:w-72">
           <HackathonSearchBar
             value={currentParams.search || ''}
-            onChange={(v) => pushParams({ search: v || undefined, page: undefined })}
+            onChange={(v) => pushParams({ search: v || undefined })}
           />
         </div>
         <HackathonFilters
@@ -101,10 +151,14 @@ export default function Home() {
           platform={currentParams.platform || ''}
           sortBy={currentParams.sortBy || 'startDate'}
           platforms={platforms}
-          onModeChange={(v) => pushParams({ mode: v || undefined, page: undefined })}
-          onPlatformChange={(v) => pushParams({ platform: v || undefined, page: undefined })}
-          onSortByChange={(v) => pushParams({ sortBy: v || undefined, page: undefined })}
-          onClear={() => { window.history.pushState(null, '', '/'); fetchData(new URLSearchParams()); setSelectedId(null); }}
+          onModeChange={(v) => pushParams({ mode: v || undefined })}
+          onPlatformChange={(v) => pushParams({ platform: v || undefined })}
+          onSortByChange={(v) => pushParams({ sortBy: v || undefined })}
+          onClear={() => {
+            window.history.pushState(null, '', '/');
+            queryRef.current = buildQuery();
+            loadFirst();
+          }}
         />
       </div>
 
@@ -124,15 +178,17 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-500">
-            {pagination.total} hackathon{pagination.total !== 1 ? 's' : ''} found
-          </p>
+          <p className="text-sm text-gray-500">{total} hackathon{total !== 1 ? 's' : ''} found</p>
 
           {data.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden" style={{ minHeight: 500 }}>
-              <div className="w-full sm:w-96 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+              <div
+                ref={listRef}
+                className="w-full sm:w-96 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
+                style={{ maxHeight: 'calc(100vh - 280px)' }}
+              >
                 {data.map((h) => (
                   <HackathonListItem
                     key={h.id}
@@ -147,6 +203,9 @@ export default function Home() {
                     onClick={() => setSelectedId(h.id)}
                   />
                 ))}
+                {loadingMore && (
+                  <div className="p-4 text-center text-sm text-gray-400">Loading more...</div>
+                )}
               </div>
 
               <div className="flex flex-1 flex-col overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
@@ -177,14 +236,6 @@ export default function Home() {
               </div>
             </div>
           )}
-
-          <div className="mt-4">
-            <Pagination
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={(page) => pushParams({ page: String(page) })}
-            />
-          </div>
         </>
       )}
     </div>
