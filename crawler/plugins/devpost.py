@@ -106,9 +106,38 @@ class DevpostPlugin(BasePlugin):
             logger.error(f"Devpost HTML fallback failed: {e}")
             return []
 
+    def _extract_sections(self, article) -> dict[str, str]:
+        """Extract sections from headings inside an article element.
+        Matches: about -> about, build -> whatToBuild, submit -> whatToSubmit, prize -> prizesDetail."""
+        result: dict = {}
+        for heading in article.find_all(["h2", "h3", "h4"]):
+            text = heading.get_text(strip=True).lower()
+            key = None
+            if "about" in text:
+                key = "about"
+            elif "build" in text:
+                key = "whatToBuild"
+            elif "submit" in text:
+                key = "whatToSubmit"
+            elif "prize" in text:
+                key = "prizesDetail"
+            if not key:
+                continue
+
+            parts: list[str] = []
+            el = heading.find_next_sibling()
+            while el and el.name not in ("h2", "h3", "h4"):
+                t = el.get_text(strip=True)
+                if t:
+                    parts.append(t)
+                el = el.find_next_sibling()
+            if parts:
+                result[key] = " ".join(parts)
+
+        return result
+
     async def _scrape_detail(self, client: httpx.AsyncClient, url: str) -> dict | None:
-        """Scrape hackathon detail page. Returns dict with 'description'+'prizesDetail'
-        if <article> elements found, otherwise 'about'+'whatToBuild'+'whatToSubmit'+'prizesDetail' from headings."""
+        """Scrape hackathon detail page for about/whatToBuild/whatToSubmit/prizesDetail."""
         try:
             resp = await client.get(url)
             if resp.status_code != 200:
@@ -116,48 +145,29 @@ class DevpostPlugin(BasePlugin):
                 return None
             soup = BeautifulSoup(resp.text, "lxml")
 
-            # Try <article> elements first
             desc_article = soup.find("article", id="challenge-description")
             prizes_article = soup.find("article", id="prizes")
 
-            if desc_article or prizes_article:
-                result: dict = {}
-                if desc_article:
+            if not desc_article and not prizes_article:
+                return None
+
+            result: dict = {}
+            if desc_article:
+                result.update(self._extract_sections(desc_article))
+                if not result:
                     text = desc_article.get_text(" ", strip=True)
                     if text:
-                        result["description"] = text
-                if prizes_article:
-                    text = prizes_article.get_text(" ", strip=True)
-                    if text:
-                        result["prizesDetail"] = text
-                if result:
-                    return result
+                        result["about"] = text
+            if prizes_article:
+                text = prizes_article.get_text(" ", strip=True)
+                if text:
+                    result["prizesDetail"] = text
 
-            # Fallback: search by headings in the whole page
-            result: dict = {}
-            for heading in soup.find_all(["h2", "h3", "h4"]):
-                text = heading.get_text(strip=True).lower()
-                key = None
-                if "about" in text:
-                    key = "about"
-                elif "build" in text:
-                    key = "whatToBuild"
-                elif "submit" in text:
-                    key = "whatToSubmit"
-                elif "prize" in text:
-                    key = "prizesDetail"
-                if not key:
-                    continue
-
-                parts: list[str] = []
-                el = heading.find_next_sibling()
-                while el and el.name not in ("h2", "h3", "h4"):
-                    t = el.get_text(strip=True)
-                    if t:
-                        parts.append(t)
-                    el = el.find_next_sibling()
-                if parts:
-                    result[key] = " ".join(parts)
+            # For any still-missing keys, fall back to whole-page search
+            fallback = self._extract_sections(soup)
+            for key in ("about", "whatToBuild", "whatToSubmit", "prizesDetail"):
+                if key not in result and key in fallback:
+                    result[key] = fallback[key]
 
             return result if result else None
         except Exception as e:
@@ -172,17 +182,11 @@ class DevpostPlugin(BasePlugin):
             async with sem:
                 data = await self._scrape_detail(client, item.url)
                 if data:
-                    if "description" in data:
-                        item.description = data["description"]
-                    if "prizesDetail" in data:
-                        item.prizes_detail = data["prizesDetail"]
-                    if "about" in data:
-                        item.about = data["about"]
-                    if "whatToBuild" in data:
-                        item.what_to_build = data["whatToBuild"]
-                    if "whatToSubmit" in data:
-                        item.what_to_submit = data["whatToSubmit"]
-                    logger.debug(f"Detail scraped: {item.title}")
+                    item.about = data.get("about")
+                    item.what_to_build = data.get("whatToBuild")
+                    item.what_to_submit = data.get("whatToSubmit")
+                    item.prizes_detail = data.get("prizesDetail")
+                    logger.debug(f"Detail scraped: {item.title} ({len(data)} sections)")
 
         await asyncio.gather(*[scrape_one(item) for item in items])
 
