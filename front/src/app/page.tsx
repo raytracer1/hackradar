@@ -221,11 +221,10 @@ export default function Home() {
           {filtered.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-gray-200 bg-white overflow-hidden" style={{ maxHeight: 'calc(100vh - 180px)' }}>
               <div
                 ref={listRef}
                 className="w-full sm:w-1/3 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 overflow-y-auto"
-                style={{ maxHeight: 'calc(100vh - 240px)' }}
               >
                   {visible.map((h) => (
                     <HackathonListItem
@@ -245,9 +244,9 @@ export default function Home() {
                   )}
                 </div>
 
-              <div className="flex w-2/3 flex-col">
+              <div className="flex w-2/3 flex-col overflow-y-auto">
                 {selected ? (
-                  <div className="w-full h-full px-[2.5rem] py-4">
+                  <div className="w-full px-[2.5rem] py-4">
                     <HackathonDetail
                       title={selected.title}
                       description={selected.description}

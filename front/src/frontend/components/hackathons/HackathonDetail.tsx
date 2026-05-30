@@ -30,7 +30,7 @@ export default function HackathonDetail({
   })();
 
   return (
-    <article className="flex flex-col h-full justify-between animate-fade-up">
+    <article className="flex flex-col animate-fade-up">
       <div className="flex items-start gap-3">
         {imageUrl && (
           <img src={imageUrl} alt={title} className="h-16 w-16 rounded-xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
@@ -77,7 +77,7 @@ export default function HackathonDetail({
       )}
 
       {(about || whatToBuild || whatToSubmit || prizesDetail) && (
-        <div className="mt-4 min-h-0 overflow-y-auto space-y-4">
+        <div className="mt-4 space-y-4">
           {about && (
             <div>
               <h3 className="mb-1 text-sm font-semibold text-slate-900">About the Challenge</h3>
