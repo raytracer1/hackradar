@@ -28,6 +28,31 @@ interface HackathonData {
 
 const DISPLAY = 20;
 
+function ShinyText({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [animDone, setAnimDone] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimDone(true), 2100);
+    return () => clearTimeout(timer);
+  }, []);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+    el.style.setProperty('--my', `${e.clientY - rect.top}px`);
+  };
+  return (
+    <span
+      ref={ref}
+      className={`shiny-text ${animDone ? 'shimmer-done' : ''} ${className}`}
+      onMouseMove={handleMouseMove}
+    >
+      {children}
+    </span>
+  );
+}
+
 export default function Home() {
   const [allData, setAllData] = useState<HackathonData[]>([]);
   const [displayCount, setDisplayCount] = useState(DISPLAY);
@@ -163,8 +188,8 @@ export default function Home() {
   return (
     <div className="space-y-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Discover money from Hackathons</h1>
-        <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which reward cash from across the web.</p>
+        <h1 className="text-3xl font-bold text-gray-900">Discover <ShinyText className="font-bold">Money</ShinyText> from Hackathons</h1>
+        <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which <ShinyText className="font-semibold">reward cash</ShinyText> from across the web.</p>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
