@@ -52,7 +52,7 @@ export default function HackathonListItem({
         </span>
         <span className="text-sm text-slate-500">{formatDate(startDate)} – {formatDate(endDate)}</span>
         {prizePool && (
-          <span className="text-sm font-semibold text-amber-600">{prizePool}</span>
+          <span className="text-sm font-semibold text-emerald-600">{prizePool}</span>
         )}
         <span className={`text-sm font-medium ml-auto ${urgent ? 'text-red-600' : 'text-slate-500'}`}>
           {left}

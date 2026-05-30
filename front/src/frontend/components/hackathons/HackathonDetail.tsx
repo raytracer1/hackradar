@@ -63,7 +63,7 @@ export default function HackathonDetail({
         {prizePool && (
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Prize Pool</span>
-            <p className="mt-1 text-lg font-bold text-amber-600">{prizePool}</p>
+            <p className="mt-1 text-lg font-bold text-emerald-600">{prizePool}</p>
           </div>
         )}
       </div>
