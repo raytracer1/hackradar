@@ -17,6 +17,6 @@ R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY", "")
 R2_SECRET_KEY = os.getenv("R2_SECRET_KEY", "")
 R2_BUCKET = os.getenv("R2_BUCKET", "hackradar-data")
 
-CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(3 * 3600)))
+CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(6 * 3600)))
 USER_AGENT = "HackRadarBot/1.0 (+https://github.com/hackradar)"
 REQUEST_TIMEOUT = 30
