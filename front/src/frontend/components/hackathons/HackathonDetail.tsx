@@ -76,12 +76,12 @@ export default function HackathonDetail({
         </div>
       )}
 
-      {(about || whatToBuild || whatToSubmit || prizesDetail) && (
+      {(description || about || whatToBuild || whatToSubmit || prizesDetail) && (
         <div className="mt-4 space-y-4">
-          {about && (
+          {(description || about) && (
             <div>
               <h3 className="mb-1 text-sm font-semibold text-slate-900">About the Challenge</h3>
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{about}</div>
+              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{description || about}</div>
             </div>
           )}
           {whatToBuild && (

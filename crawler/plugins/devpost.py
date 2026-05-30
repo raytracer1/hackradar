@@ -10,15 +10,6 @@ from config import USER_AGENT, REQUEST_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-# Sections to extract from each hackathon detail page
-DETAIL_SECTIONS = [
-    "About the Challenge",
-    "What to Build",
-    "What to Submit",
-    "Prizes",
-]
-
-# Max concurrent detail page fetches
 MAX_CONCURRENT = 5
 
 
@@ -115,8 +106,9 @@ class DevpostPlugin(BasePlugin):
             logger.error(f"Devpost HTML fallback failed: {e}")
             return []
 
-    async def _scrape_detail(self, client: httpx.AsyncClient, url: str) -> dict[str, str] | None:
-        """Scrape a hackathon detail page, returning a dict of section -> content."""
+    async def _scrape_detail(self, client: httpx.AsyncClient, url: str) -> dict | None:
+        """Scrape hackathon detail page. Returns dict with 'description'+'prizesDetail'
+        if <article> elements found, otherwise 'about'+'whatToBuild'+'whatToSubmit'+'prizesDetail' from headings."""
         try:
             resp = await client.get(url)
             if resp.status_code != 200:
@@ -124,46 +116,73 @@ class DevpostPlugin(BasePlugin):
                 return None
             soup = BeautifulSoup(resp.text, "lxml")
 
-            sections: dict[str, str] = {}
-            headings = soup.find_all(["h2", "h3", "h4"])
-            for heading in headings:
-                text = heading.get_text(strip=True)
-                matched = None
-                for section in DETAIL_SECTIONS:
-                    if section.lower() in text.lower():
-                        matched = section
-                        break
-                if not matched:
+            # Try <article> elements first
+            desc_article = soup.find("article", id="challenge-description")
+            prizes_article = soup.find("article", id="prizes")
+
+            if desc_article or prizes_article:
+                result: dict = {}
+                if desc_article:
+                    text = desc_article.get_text(" ", strip=True)
+                    if text:
+                        result["description"] = text
+                if prizes_article:
+                    text = prizes_article.get_text(" ", strip=True)
+                    if text:
+                        result["prizesDetail"] = text
+                if result:
+                    return result
+
+            # Fallback: search by headings in the whole page
+            result: dict = {}
+            for heading in soup.find_all(["h2", "h3", "h4"]):
+                text = heading.get_text(strip=True).lower()
+                key = None
+                if "about" in text:
+                    key = "about"
+                elif "build" in text:
+                    key = "whatToBuild"
+                elif "submit" in text:
+                    key = "whatToSubmit"
+                elif "prize" in text:
+                    key = "prizesDetail"
+                if not key:
                     continue
 
                 parts: list[str] = []
                 el = heading.find_next_sibling()
                 while el and el.name not in ("h2", "h3", "h4"):
-                    tag_text = el.get_text(strip=True)
-                    if tag_text:
-                        parts.append(tag_text)
+                    t = el.get_text(strip=True)
+                    if t:
+                        parts.append(t)
                     el = el.find_next_sibling()
                 if parts:
-                    sections[matched] = " ".join(parts)
+                    result[key] = " ".join(parts)
 
-            return sections if sections else None
+            return result if result else None
         except Exception as e:
             logger.warning(f"Detail scraping failed for {url}: {e}")
             return None
 
     async def _scrape_all_details(self, client: httpx.AsyncClient, items: list[HackathonItem]) -> None:
-        """Concurrently scrape detail pages, setting individual section fields."""
+        """Concurrently scrape detail pages."""
         sem = asyncio.Semaphore(MAX_CONCURRENT)
 
         async def scrape_one(item: HackathonItem):
             async with sem:
-                sections = await self._scrape_detail(client, item.url)
-                if sections:
-                    item.about = sections.get("About the Challenge")
-                    item.what_to_build = sections.get("What to Build")
-                    item.what_to_submit = sections.get("What to Submit")
-                    item.prizes_detail = sections.get("Prizes")
-                    logger.debug(f"Detail scraped: {item.title} ({len(sections)} sections)")
+                data = await self._scrape_detail(client, item.url)
+                if data:
+                    if "description" in data:
+                        item.description = data["description"]
+                    if "prizesDetail" in data:
+                        item.prizes_detail = data["prizesDetail"]
+                    if "about" in data:
+                        item.about = data["about"]
+                    if "whatToBuild" in data:
+                        item.what_to_build = data["whatToBuild"]
+                    if "whatToSubmit" in data:
+                        item.what_to_submit = data["whatToSubmit"]
+                    logger.debug(f"Detail scraped: {item.title}")
 
         await asyncio.gather(*[scrape_one(item) for item in items])
 
