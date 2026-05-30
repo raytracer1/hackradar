@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from plugins.devpost import DevpostPlugin
 from plugins.dorahacks import DorahacksPlugin
+from plugins.taikai import TaikaiPlugin
 from scheduler import Scheduler
 from config import CRAWL_INTERVAL_SECONDS
 
@@ -32,6 +33,7 @@ def get_plugins():
     return [
         DevpostPlugin(),
         DorahacksPlugin(),
+        TaikaiPlugin(),
     ]
 
 

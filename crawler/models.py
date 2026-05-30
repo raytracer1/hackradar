@@ -20,3 +20,4 @@ class HackathonItem(BaseModel):
     prize_pool: Optional[str] = None
     themes: list[str] = []
     status: str = "active"
+    is_closed: bool = False
