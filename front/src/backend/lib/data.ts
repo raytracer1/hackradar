@@ -5,8 +5,6 @@ export interface HackathonData {
   description: string | null;
   url: string;
   imageUrl: string | null;
-  mode: string;
-  location: string | null;
   startDate: string;
   endDate: string;
   timezone: string | null;

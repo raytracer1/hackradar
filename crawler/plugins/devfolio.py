@@ -67,8 +67,6 @@ class DevfolioPlugin(BasePlugin):
             title=title,
             url=href,
             image_url=None,
-            mode="online",
-            location=None,
             start_date=datetime.now(),
             end_date=datetime.now(),
             prize_pool=None,

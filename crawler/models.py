@@ -10,8 +10,6 @@ class HackathonItem(BaseModel):
     description: Optional[str] = None
     url: str
     image_url: Optional[str] = None
-    mode: str = "online"
-    location: Optional[str] = None
     start_date: datetime
     end_date: datetime
     timezone: Optional[str] = None

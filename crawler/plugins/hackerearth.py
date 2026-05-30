@@ -57,12 +57,6 @@ class HackerEarthPlugin(BasePlugin):
 
         source_id = href.rstrip("/").split("/")[-1] if href else title.replace(" ", "-").lower()
 
-        # Try to find mode
-        text = card.get_text().lower()
-        if "offline" in text:
-            mode = "offline"
-        elif "online" in text:
-            mode = "online"
         else:
             mode = "online"
 
@@ -80,8 +74,6 @@ class HackerEarthPlugin(BasePlugin):
             title=title,
             url=href,
             image_url=None,
-            mode=mode,
-            location=None,
             start_date=datetime.now(),
             end_date=datetime.now(),
             prize_pool=prize_pool,

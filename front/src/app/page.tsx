@@ -14,8 +14,6 @@ interface HackathonData {
   description: string | null;
   url: string;
   imageUrl: string | null;
-  mode: string;
-  location: string | null;
   startDate: string;
   endDate: string;
   timezone: string | null;
@@ -251,8 +249,6 @@ export default function Home() {
                       description={selected.description}
                       url={selected.url}
                       imageUrl={selected.imageUrl}
-                      mode={selected.mode}
-                      location={selected.location}
                       startDate={selected.startDate}
                       endDate={selected.endDate}
                       timezone={selected.timezone}

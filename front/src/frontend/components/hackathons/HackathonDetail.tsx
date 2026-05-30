@@ -5,8 +5,6 @@ interface HackathonDetailProps {
   description: string | null;
   url: string;
   imageUrl: string | null;
-  mode: string;
-  location: string | null;
   startDate: string;
   endDate: string;
   timezone: string | null;
@@ -18,7 +16,7 @@ interface HackathonDetailProps {
 }
 
 export default function HackathonDetail({
-  title, description, url, imageUrl, mode, location, startDate, endDate,
+  title, description, url, imageUrl, startDate, endDate,
   timezone, prizePool, themes, platform, known, onMarkKnown,
 }: HackathonDetailProps) {
   const themeList: string[] = Array.isArray(themes) ? themes : (() => {
@@ -57,20 +55,12 @@ export default function HackathonDetail({
             <HackathonDateBadge startDate={startDate} endDate={endDate} />
           </p>
         </div>
-        <div>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Location</span>
-          <p className="mt-0.5 text-sm text-slate-700">{location || 'Online'}</p>
-        </div>
         {prizePool && (
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Prize Pool</span>
             <p className="mt-0.5 text-lg font-bold text-amber-600">{prizePool}</p>
           </div>
         )}
-        <div>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Mode</span>
-          <p className="mt-0.5 text-sm capitalize text-slate-700">{mode}</p>
-        </div>
       </div>
 
       {themeList.length > 0 && (

@@ -189,13 +189,6 @@ class DevpostPlugin(BasePlugin):
                 elif isinstance(t, str):
                     themes.append(t)
 
-        # Extract location string from API response
-        loc_raw = h.get("displayed_location")
-        if isinstance(loc_raw, dict):
-            loc_str = loc_raw.get("name", "") if loc_raw else ""
-        else:
-            loc_str = str(loc_raw or "")
-
         return HackathonItem(
             source_id=f"devpost_{source_id}",
             source="devpost",
@@ -203,17 +196,9 @@ class DevpostPlugin(BasePlugin):
             description=self._strip_html(h.get("description", "")),
             url=url,
             image_url=h.get("thumbnail_url"),
-            mode=self._guess_mode(loc_str),
-            location=loc_str or None,
             start_date=start_date or datetime.now(timezone.utc),
             end_date=end_date or start_date or datetime.now(timezone.utc),
             prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
         )
 
-    @staticmethod
-    def _guess_mode(loc_str: str) -> str:
-        loc = loc_str.lower()
-        if not loc or "online" in loc:
-            return "online"
-        return "offline"

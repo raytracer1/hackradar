@@ -48,8 +48,6 @@ def item_to_dict(item) -> dict:
         "description": item.description,
         "url": item.url,
         "imageUrl": item.image_url,
-        "mode": item.mode,
-        "location": item.location,
         "startDate": item.start_date.isoformat() if hasattr(item.start_date, "isoformat") else str(item.start_date),
         "endDate": item.end_date.isoformat() if hasattr(item.end_date, "isoformat") else str(item.end_date),
         "timezone": item.timezone,

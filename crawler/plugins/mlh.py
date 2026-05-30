@@ -48,14 +48,6 @@ class MLHPlugin(BasePlugin):
         if not title or not ev_id:
             return None
 
-        # Parse mode
-        mode_map = {
-            "online": "online",
-            "in-person": "offline",
-            "hybrid": "hybrid",
-        }
-        mode_raw = (ev.get("format", "") or "").lower()
-        mode = mode_map.get(mode_raw, "online")
 
         # Parse dates
         start_date = datetime.fromisoformat(ev["start_date"].replace("Z", "+00:00")) if ev.get("start_date") else datetime.now()
@@ -68,8 +60,6 @@ class MLHPlugin(BasePlugin):
             description=ev.get("description"),
             url=ev.get("website_url", ev.get("registration_url", "")),
             image_url=ev.get("logo_url", ev.get("banner_url")),
-            mode=mode,
-            location=ev.get("location", ev.get("city")),
             start_date=start_date,
             end_date=end_date,
             prize_pool=None,
