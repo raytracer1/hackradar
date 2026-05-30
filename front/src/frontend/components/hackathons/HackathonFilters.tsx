@@ -10,7 +10,6 @@ interface FiltersProps {
   onPrizeMaxChange: (v: string) => void;
   onSortByChange: (v: string) => void;
   onSourceToggle: (slug: string) => void;
-  onClear: () => void;
 }
 
 const sortOptions = [
@@ -22,12 +21,8 @@ const sortOptions = [
 
 export default function HackathonFilters({
   prizeMin, prizeMax, sortBy, platforms, selectedSources,
-  onPrizeMinChange, onPrizeMaxChange, onSortByChange, onSourceToggle, onClear,
+  onPrizeMinChange, onPrizeMaxChange, onSortByChange, onSourceToggle,
 }: FiltersProps) {
-  const hasPrizeFilters = prizeMin || prizeMax;
-  const hasSourceFilter = selectedSources.size > 0;
-  const hasFilters = hasPrizeFilters || sortBy !== 'endDate' || hasSourceFilter;
-
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Source filter */}
@@ -79,12 +74,6 @@ export default function HackathonFilters({
         ))}
       </select>
 
-      {/* Clear */}
-      {hasFilters && (
-        <button onClick={onClear} className="text-xs font-medium text-slate-400 hover:text-slate-600 transition">
-          Clear
-        </button>
-      )}
     </div>
   );
 }

@@ -218,13 +218,6 @@ export default function Home() {
             platforms={platforms}
             selectedSources={selectedSources}
             onSourceToggle={handleSourceToggle}
-            onClear={() => {
-              window.history.pushState(null, '', '/');
-              setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
-              setSelectedSources(new Set());
-              setDisplayCount(DISPLAY);
-              setSelectedId(null);
-            }}
           />
           <button
             onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
