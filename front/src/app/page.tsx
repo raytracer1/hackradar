@@ -56,6 +56,7 @@ export default function Home() {
     try { return new Set(JSON.parse(localStorage.getItem('known') || '[]')); } catch { return new Set(); }
   });
   const [showKnown, setShowKnown] = useState(false);
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
   function readURLParams() {
     if (typeof window === 'undefined') return { prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' };
     const sp = new URLSearchParams(window.location.search);
@@ -124,6 +125,8 @@ export default function Home() {
     if (filters.prizeMax) {
       if (parsePrize(h.prizePool) > parseFloat(filters.prizeMax)) return false;
     }
+    // Source filter: selectedSources = sources to HIDE
+    if (selectedSources.has(h.platform.slug)) return false;
     return true;
   });
 
@@ -176,6 +179,18 @@ export default function Home() {
     window.history.pushState(null, '', params.toString() ? `?${params.toString()}` : '/');
   };
 
+  const handleSourceToggle = (slug: string) => {
+    const next = new Set(selectedSources);
+    if (next.has(slug)) {
+      next.delete(slug); // Show this source again
+    } else {
+      next.add(slug); // Hide this source
+    }
+    setSelectedSources(next);
+    setDisplayCount(DISPLAY);
+    setSelectedId(null);
+  };
+
   const selected = allData.find((h) => h.id === selectedId) || null;
 
   return (
@@ -200,9 +215,13 @@ export default function Home() {
             onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
             onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
             onSortByChange={(v) => updateFilter('sortBy', v)}
+            platforms={platforms}
+            selectedSources={selectedSources}
+            onSourceToggle={handleSourceToggle}
             onClear={() => {
               window.history.pushState(null, '', '/');
               setFilters({ prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' });
+              setSelectedSources(new Set());
               setDisplayCount(DISPLAY);
               setSelectedId(null);
             }}

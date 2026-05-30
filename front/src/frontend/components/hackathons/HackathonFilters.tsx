@@ -4,9 +4,12 @@ interface FiltersProps {
   prizeMin: string;
   prizeMax: string;
   sortBy: string;
+  platforms: { slug: string; name: string }[];
+  selectedSources: Set<string>;
   onPrizeMinChange: (v: string) => void;
   onPrizeMaxChange: (v: string) => void;
   onSortByChange: (v: string) => void;
+  onSourceToggle: (slug: string) => void;
   onClear: () => void;
 }
 
@@ -18,13 +21,38 @@ const sortOptions = [
 ];
 
 export default function HackathonFilters({
-  prizeMin, prizeMax, sortBy,
-  onPrizeMinChange, onPrizeMaxChange, onSortByChange, onClear,
+  prizeMin, prizeMax, sortBy, platforms, selectedSources,
+  onPrizeMinChange, onPrizeMaxChange, onSortByChange, onSourceToggle, onClear,
 }: FiltersProps) {
-  const hasFilters = prizeMin || prizeMax || sortBy !== 'endDate';
+  const hasPrizeFilters = prizeMin || prizeMax;
+  const hasSourceFilter = selectedSources.size > 0;
+  const hasFilters = hasPrizeFilters || sortBy !== 'endDate' || hasSourceFilter;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {/* Source filter */}
+      {platforms.length > 0 && (
+        <div className="flex items-center gap-1">
+          {platforms.map((p) => {
+            const active = !selectedSources.has(p.slug);
+            return (
+              <button
+                key={p.slug}
+                onClick={() => onSourceToggle(p.slug)}
+                className={`h-10 rounded-xl border px-3 text-xs font-medium transition ${
+                  active
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-500'
+                }`}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Prize range */}
       <div className="flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">$</span>
         <input
@@ -40,6 +68,7 @@ export default function HackathonFilters({
         />
       </div>
 
+      {/* Sort */}
       <select
         value={sortBy}
         onChange={(e) => onSortByChange(e.target.value)}
@@ -50,6 +79,7 @@ export default function HackathonFilters({
         ))}
       </select>
 
+      {/* Clear */}
       {hasFilters && (
         <button onClick={onClear} className="text-xs font-medium text-slate-400 hover:text-slate-600 transition">
           Clear
