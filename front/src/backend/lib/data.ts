@@ -3,6 +3,10 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 export interface HackathonData {
   title: string;
   description: string | null;
+  about: string | null;
+  whatToBuild: string | null;
+  whatToSubmit: string | null;
+  prizesDetail: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;

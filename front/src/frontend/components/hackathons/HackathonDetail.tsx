@@ -3,6 +3,10 @@ import HackathonDateBadge from './HackathonDateBadge';
 interface HackathonDetailProps {
   title: string;
   description: string | null;
+  about: string | null;
+  whatToBuild: string | null;
+  whatToSubmit: string | null;
+  prizesDetail: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;
@@ -16,7 +20,8 @@ interface HackathonDetailProps {
 }
 
 export default function HackathonDetail({
-  title, description, url, imageUrl, startDate, endDate,
+  title, description, about, whatToBuild, whatToSubmit, prizesDetail,
+  url, imageUrl, startDate, endDate,
   timezone, prizePool, themes, platform, known, onMarkKnown,
 }: HackathonDetailProps) {
   const themeList: string[] = Array.isArray(themes) ? themes : (() => {
@@ -71,10 +76,32 @@ export default function HackathonDetail({
         </div>
       )}
 
-      {description && (
-        <div className="mt-4 min-h-0 overflow-y-auto">
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">About</h2>
-          <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{description}</div>
+      {(about || whatToBuild || whatToSubmit || prizesDetail) && (
+        <div className="mt-4 min-h-0 overflow-y-auto space-y-4">
+          {about && (
+            <div>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">About the Challenge</h3>
+              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{about}</div>
+            </div>
+          )}
+          {whatToBuild && (
+            <div>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">What to Build</h3>
+              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{whatToBuild}</div>
+            </div>
+          )}
+          {whatToSubmit && (
+            <div>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">What to Submit</h3>
+              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{whatToSubmit}</div>
+            </div>
+          )}
+          {prizesDetail && (
+            <div>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">Prizes</h3>
+              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{prizesDetail}</div>
+            </div>
+          )}
         </div>
       )}
 

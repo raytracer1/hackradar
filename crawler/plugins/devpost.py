@@ -1,12 +1,25 @@
+import asyncio
 import httpx
 import logging
 from datetime import datetime, timezone, timedelta
 
+from bs4 import BeautifulSoup
 from plugins.base import BasePlugin
 from models import HackathonItem
 from config import USER_AGENT, REQUEST_TIMEOUT
 
 logger = logging.getLogger(__name__)
+
+# Sections to extract from each hackathon detail page
+DETAIL_SECTIONS = [
+    "About the Challenge",
+    "What to Build",
+    "What to Submit",
+    "Prizes",
+]
+
+# Max concurrent detail page fetches
+MAX_CONCURRENT = 5
 
 
 class DevpostPlugin(BasePlugin):
@@ -59,6 +72,17 @@ class DevpostPlugin(BasePlugin):
                 except Exception as e:
                     logger.error(f"Devpost parse error: {e}")
 
+            # Filter out hackathons without cash prizes before scraping details
+            all_count = len(items)
+            items = [it for it in items if self._has_cash_prize(it.prize_pool)]
+            dropped = all_count - len(items)
+            if dropped:
+                logger.info(f"Devpost: {dropped}/{all_count} filtered out (no cash prize)")
+
+            if items:
+                logger.info(f"Scraping detail pages for {len(items)} hackathons...")
+                await self._scrape_all_details(client, items)
+
         return items
 
     async def _scrape_html(self, client: httpx.AsyncClient) -> list[dict]:
@@ -90,6 +114,73 @@ class DevpostPlugin(BasePlugin):
         except Exception as e:
             logger.error(f"Devpost HTML fallback failed: {e}")
             return []
+
+    async def _scrape_detail(self, client: httpx.AsyncClient, url: str) -> dict[str, str] | None:
+        """Scrape a hackathon detail page, returning a dict of section -> content."""
+        try:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                logger.warning(f"Detail page returned {resp.status_code}: {url}")
+                return None
+            soup = BeautifulSoup(resp.text, "lxml")
+
+            sections: dict[str, str] = {}
+            headings = soup.find_all(["h2", "h3", "h4"])
+            for heading in headings:
+                text = heading.get_text(strip=True)
+                matched = None
+                for section in DETAIL_SECTIONS:
+                    if section.lower() in text.lower():
+                        matched = section
+                        break
+                if not matched:
+                    continue
+
+                parts: list[str] = []
+                el = heading.find_next_sibling()
+                while el and el.name not in ("h2", "h3", "h4"):
+                    tag_text = el.get_text(strip=True)
+                    if tag_text:
+                        parts.append(tag_text)
+                    el = el.find_next_sibling()
+                if parts:
+                    sections[matched] = " ".join(parts)
+
+            return sections if sections else None
+        except Exception as e:
+            logger.warning(f"Detail scraping failed for {url}: {e}")
+            return None
+
+    async def _scrape_all_details(self, client: httpx.AsyncClient, items: list[HackathonItem]) -> None:
+        """Concurrently scrape detail pages, setting individual section fields."""
+        sem = asyncio.Semaphore(MAX_CONCURRENT)
+
+        async def scrape_one(item: HackathonItem):
+            async with sem:
+                sections = await self._scrape_detail(client, item.url)
+                if sections:
+                    item.about = sections.get("About the Challenge")
+                    item.what_to_build = sections.get("What to Build")
+                    item.what_to_submit = sections.get("What to Submit")
+                    item.prizes_detail = sections.get("Prizes")
+                    logger.debug(f"Detail scraped: {item.title} ({len(sections)} sections)")
+
+        await asyncio.gather(*[scrape_one(item) for item in items])
+
+    @staticmethod
+    def _has_cash_prize(prize_pool: str | None) -> bool:
+        """Return True if prize_pool indicates a non-zero cash prize."""
+        if not prize_pool:
+            return False
+        import re
+        cleaned = prize_pool.replace(",", "").replace("$", "")
+        m = re.search(r"[\d.]+", cleaned)
+        if not m:
+            return False
+        try:
+            return float(m.group()) > 0
+        except ValueError:
+            return False
 
     @staticmethod
     def _strip_html(text: str | None) -> str | None:

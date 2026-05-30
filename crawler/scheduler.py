@@ -46,6 +46,10 @@ def item_to_dict(item) -> dict:
     return {
         "title": item.title,
         "description": item.description,
+        "about": item.about,
+        "whatToBuild": item.what_to_build,
+        "whatToSubmit": item.what_to_submit,
+        "prizesDetail": item.prizes_detail,
         "url": item.url,
         "imageUrl": item.image_url,
         "startDate": item.start_date.isoformat() if hasattr(item.start_date, "isoformat") else str(item.start_date),

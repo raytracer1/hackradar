@@ -12,6 +12,10 @@ interface HackathonData {
   id: string;
   title: string;
   description: string | null;
+  about: string | null;
+  whatToBuild: string | null;
+  whatToSubmit: string | null;
+  prizesDetail: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;
@@ -247,6 +251,10 @@ export default function Home() {
                     <HackathonDetail
                       title={selected.title}
                       description={selected.description}
+                      about={selected.about}
+                      whatToBuild={selected.whatToBuild}
+                      whatToSubmit={selected.whatToSubmit}
+                      prizesDetail={selected.prizesDetail}
                       url={selected.url}
                       imageUrl={selected.imageUrl}
                       startDate={selected.startDate}
