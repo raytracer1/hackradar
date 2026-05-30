@@ -28,7 +28,7 @@ class DevpostPlugin(BasePlugin):
                 try:
                     resp = await client.get(
                         "https://devpost.com/api/hackathons",
-                        params={"status": "open", "page": page, "per_page": 100},
+                        params={"status": "open", "page": page, "per_page": 100, "challenge_type[]": "online"},
                     )
                     if resp.status_code != 200:
                         break
