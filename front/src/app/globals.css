@@ -32,7 +32,8 @@ body {
 
 @keyframes shimmer-once {
   0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  50% { background-position: 0% 0; }
+  100% { background-position: 0% 0; }
 }
 .shiny-text {
   background: linear-gradient(110deg, #059669 0%, #10b981 25%, #6ee7b7 45%, #ffffff 55%, #6ee7b7 65%, #10b981 85%, #059669 100%);
@@ -40,15 +41,9 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer-once 2s ease-out forwards;
+  animation: shimmer-once 2.5s ease-out forwards;
 }
-.shiny-text.shimmer-done {
-  animation: none;
-  color: #059669;
-  -webkit-text-fill-color: #059669;
-  background: none;
-}
-.shiny-text.shimmer-done:hover {
+.shiny-text:hover {
   animation: none;
   background: radial-gradient(circle 120px at var(--mx) var(--my), #ffffff 0%, #a7f3d0 20%, #10b981 50%, #059669 100%);
   -webkit-background-clip: text;

@@ -30,11 +30,8 @@ const DISPLAY = 20;
 
 function ShinyText({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [animDone, setAnimDone] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimDone(true), 2100);
-    return () => clearTimeout(timer);
-  }, []);
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; }, []);
   const handleMouseMove = (e: React.MouseEvent) => {
     const el = ref.current;
     if (!el) return;
@@ -43,11 +40,7 @@ function ShinyText({ children, className = '' }: { children: React.ReactNode; cl
     el.style.setProperty('--my', `${e.clientY - rect.top}px`);
   };
   return (
-    <span
-      ref={ref}
-      className={`shiny-text ${animDone ? 'shimmer-done' : ''} ${className}`}
-      onMouseMove={handleMouseMove}
-    >
+    <span ref={ref} className={`shiny-text ${className}`} onMouseMove={handleMouseMove}>
       {children}
     </span>
   );
