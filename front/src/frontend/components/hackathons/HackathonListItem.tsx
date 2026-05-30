@@ -16,22 +16,30 @@ function formatDate(dateStr: string): string {
 function timeLeft(dateStr: string): string {
   const diff = new Date(dateStr).getTime() - Date.now();
   if (diff < 0) return 'Ended';
-  const hours = diff / 3600000;
-  if (hours < 24) {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    if (h === 0 && m === 0) return 'Ends now';
-    if (h === 0) return `${m}m left`;
-    return `${h}h ${m}m left`;
+  const totalHours = diff / 3600000;
+  const days = Math.floor(totalHours / 24);
+  const remainingHours = Math.floor(totalHours % 24);
+  const minutes = Math.floor((totalHours % 1) * 60);
+
+  if (totalHours < 1) {
+    if (minutes === 0) return 'Ends now';
+    return `${minutes}m left`;
   }
-  return `${Math.floor(hours / 24)}d left`;
+  if (totalHours < 24) {
+    if (remainingHours === 0) return `${minutes}m left`;
+    return `${Math.floor(totalHours)}h ${minutes}m left`;
+  }
+  if (days < 10) {
+    return `${days}d ${remainingHours}h left`;
+  }
+  return `${days}d left`;
 }
 
 export default function HackathonListItem({
   title, startDate, endDate, platform, prizePool, selected, onClick,
 }: HackathonListItemProps) {
   const left = timeLeft(endDate);
-  const urgent = left.includes('h') || left.includes('m') || left === 'Ends now';
+  const urgent = left.includes('h') || left.includes('m') || left.includes('Ends now');
 
   return (
     <button
