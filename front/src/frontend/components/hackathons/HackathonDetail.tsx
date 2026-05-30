@@ -33,7 +33,7 @@ export default function HackathonDetail({
     <article className="flex flex-col animate-fade-up">
       <div className="flex items-start gap-3">
         {imageUrl && (
-          <img src={imageUrl} alt={title} className="h-20 w-20 rounded-xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
+          <img src={imageUrl} alt={title} className="h-36 w-36 rounded-xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
         )}
         <button
           onClick={onMarkKnown}
