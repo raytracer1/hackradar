@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import re
+import random
 from datetime import datetime
 
 from r2_client import upload_hackathons
@@ -105,5 +106,7 @@ class Scheduler:
         logger.info(f"Scheduler started, interval={self.interval}s ({self.interval / 3600:.1f}h)")
         while True:
             await self.run_once()
-            logger.info(f"Sleeping for {self.interval}s...")
-            await asyncio.sleep(self.interval)
+            jitter = random.randint(-30 * 60, 30 * 60)
+            sleep_seconds = self.interval + jitter
+            logger.info(f"Sleeping for {sleep_seconds}s ({self.interval}s + {jitter}s jitter)...")
+            await asyncio.sleep(sleep_seconds)
