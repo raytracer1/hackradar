@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
 from plugins.base import BasePlugin
 from models import HackathonItem
 from config import USER_AGENT, REQUEST_TIMEOUT
@@ -12,18 +13,66 @@ logger = logging.getLogger(__name__)
 
 MAX_CONCURRENT = 5
 
+# Realistic browser UA to avoid bot detection — the original HackRadarBot UA gets blocked
+BROWSER_UA = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
 
 class DevpostPlugin(BasePlugin):
     @property
     def name(self) -> str:
         return "devpost"
 
+    async def _get_waf_cookies(self) -> dict[str, str]:
+        """Launch headless browser to pass AWS WAF JS challenge, return cookies."""
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(user_agent=BROWSER_UA)
+            page = await context.new_page()
+
+            try:
+                # Navigate to the API endpoint — browser auto-solves WAF challenge
+                url = (
+                    "https://devpost.com/api/hackathons"
+                    "?status=open&page=1&per_page=1&challenge_type[]=online"
+                )
+                resp = await page.goto(url, wait_until="networkidle", timeout=30000)
+
+                if resp and resp.status == 200:
+                    logger.info("Successfully passed WAF challenge via Playwright")
+                elif resp:
+                    logger.warning(
+                        f"Playwright WAF pass returned status {resp.status}"
+                    )
+
+                cookies = await context.cookies()
+                await page.close()
+                await browser.close()
+                return {c["name"]: c["value"] for c in cookies}
+
+            except Exception as e:
+                logger.error(f"Failed to pass WAF challenge: {e}")
+                await browser.close()
+                return {}
+
     async def fetch(self) -> list[HackathonItem]:
-        """Scrape Devpost hackathons from their public API."""
+        """Scrape Devpost hackathons from their public API.
+
+        Uses Playwright to pass AWS WAF JS challenge, then httpx for speed.
+        """
         items: list[HackathonItem] = []
 
+        # Step 1 — get valid cookies by passing the WAF JS challenge
+        waf_cookies = await self._get_waf_cookies()
+        if not waf_cookies:
+            logger.error("Devpost: could not obtain WAF cookies, aborting")
+            return []
+
         async with httpx.AsyncClient(
-            headers={"User-Agent": USER_AGENT},
+            headers={"User-Agent": BROWSER_UA},
+            cookies=waf_cookies,
             timeout=REQUEST_TIMEOUT,
         ) as client:
             hackathons: list[dict] = []
@@ -32,19 +81,31 @@ class DevpostPlugin(BasePlugin):
                 try:
                     resp = await client.get(
                         "https://devpost.com/api/hackathons",
-                        params={"status": "open", "page": page, "per_page": 100, "challenge_type[]": "online"},
+                        params={
+                            "status": "open",
+                            "page": page,
+                            "per_page": 100,
+                            "challenge_type[]": "online",
+                        },
                     )
                     if resp.status_code != 200:
+                        logger.warning(
+                            f"Devpost API returned {resp.status_code} on page {page}"
+                        )
                         break
                     data = resp.json()
                     meta = data.get("meta", {})
-                    total = meta.get("total_count", "?")
+                    total = meta.get("total_count", 0)
                     page_items = data.get("hackathons", [])
                     if not page_items:
                         break
                     hackathons.extend(page_items)
-                    logger.info(f"Devpost page {page}: {len(page_items)} items (total: {total}, collected: {len(hackathons)})")
-                    if not page_items or len(hackathons) >= total:
+                    logger.info(
+                        f"Devpost page {page}: {len(page_items)} items "
+                        f"(total: {total}, collected: {len(hackathons)})"
+                    )
+                    # Guard: stop when we've collected everything
+                    if isinstance(total, int) and len(hackathons) >= total:
                         break
                     page += 1
                 except Exception as e:
@@ -52,7 +113,9 @@ class DevpostPlugin(BasePlugin):
                     break
 
             if not hackathons:
-                logger.warning("Devpost API returned no results, trying HTML fallback")
+                logger.warning(
+                    "Devpost API returned no results, trying HTML fallback"
+                )
                 hackathons = await self._scrape_html(client)
 
             for h in hackathons:
@@ -68,10 +131,14 @@ class DevpostPlugin(BasePlugin):
             items = [it for it in items if self._has_cash_prize(it.prize_pool)]
             dropped = all_count - len(items)
             if dropped:
-                logger.info(f"Devpost: {dropped}/{all_count} filtered out (no cash prize)")
+                logger.info(
+                    f"Devpost: {dropped}/{all_count} filtered out (no cash prize)"
+                )
 
             if items:
-                logger.info(f"Scraping detail pages for {len(items)} hackathons...")
+                logger.info(
+                    f"Scraping detail pages for {len(items)} hackathons..."
+                )
                 await self._scrape_all_details(client, items)
 
         return items
@@ -79,13 +146,15 @@ class DevpostPlugin(BasePlugin):
     async def _scrape_html(self, client: httpx.AsyncClient) -> list[dict]:
         """Fallback: scrape Devpost hackathons listing page."""
         try:
-            from bs4 import BeautifulSoup
-
-            resp = await client.get("https://devpost.com/hackathons?status=upcoming")
+            resp = await client.get(
+                "https://devpost.com/hackathons?status=upcoming"
+            )
             soup = BeautifulSoup(resp.text, "lxml")
             results: list[dict] = []
 
-            for card in soup.select(".hackathon-tile, .challenge-listing article"):
+            for card in soup.select(
+                ".hackathon-tile, .challenge-listing article"
+            ):
                 title_el = card.select_one("h2, h3, .title")
                 link_el = card.select_one("a[href]")
                 if not title_el or not link_el:
@@ -99,6 +168,8 @@ class DevpostPlugin(BasePlugin):
                     "title": title_el.get_text(strip=True),
                     "url": href,
                     "id": href.split("/")[-1] if href else "",
+                    # Without prize_amount the cash-prize filter drops everything
+                    "prize_amount": "$0",
                 })
 
             return results
@@ -108,7 +179,9 @@ class DevpostPlugin(BasePlugin):
 
     def _extract_sections(self, article) -> dict[str, str]:
         """Extract sections from headings inside an article element.
-        Matches: about -> about, build -> whatToBuild, submit -> whatToSubmit, prize -> prizesDetail."""
+        Matches: about -> about, build -> whatToBuild,
+                 submit -> whatToSubmit, prize -> prizesDetail.
+        """
         result: dict = {}
         for heading in article.find_all(["h2", "h3", "h4"]):
             text = heading.get_text(strip=True).lower()
@@ -136,12 +209,18 @@ class DevpostPlugin(BasePlugin):
 
         return result
 
-    async def _scrape_detail(self, client: httpx.AsyncClient, url: str) -> dict | None:
-        """Scrape hackathon detail page for about/whatToBuild/whatToSubmit/prizesDetail."""
+    async def _scrape_detail(
+        self, client: httpx.AsyncClient, url: str
+    ) -> dict | None:
+        """Scrape hackathon detail page for
+        about / whatToBuild / whatToSubmit / prizesDetail.
+        """
         try:
             resp = await client.get(url)
             if resp.status_code != 200:
-                logger.warning(f"Detail page returned {resp.status_code}: {url}")
+                logger.warning(
+                    f"Detail page returned {resp.status_code}: {url}"
+                )
                 return None
             soup = BeautifulSoup(resp.text, "lxml")
 
@@ -163,7 +242,7 @@ class DevpostPlugin(BasePlugin):
                 if text:
                     result["prizesDetail"] = text
 
-            # For any still-missing keys, fall back to whole-page search
+            # For still-missing keys, fall back to whole-page search
             fallback = self._extract_sections(soup)
             for key in ("about", "whatToBuild", "whatToSubmit", "prizesDetail"):
                 if key not in result and key in fallback:
@@ -174,7 +253,9 @@ class DevpostPlugin(BasePlugin):
             logger.warning(f"Detail scraping failed for {url}: {e}")
             return None
 
-    async def _scrape_all_details(self, client: httpx.AsyncClient, items: list[HackathonItem]) -> None:
+    async def _scrape_all_details(
+        self, client: httpx.AsyncClient, items: list[HackathonItem]
+    ) -> None:
         """Concurrently scrape detail pages."""
         sem = asyncio.Semaphore(MAX_CONCURRENT)
 
@@ -186,7 +267,9 @@ class DevpostPlugin(BasePlugin):
                     item.what_to_build = data.get("whatToBuild")
                     item.what_to_submit = data.get("whatToSubmit")
                     item.prizes_detail = data.get("prizesDetail")
-                    logger.debug(f"Detail scraped: {item.title} ({len(data)} sections)")
+                    logger.debug(
+                        f"Detail scraped: {item.title} ({len(data)} sections)"
+                    )
 
         await asyncio.gather(*[scrape_one(item) for item in items])
 
@@ -196,6 +279,7 @@ class DevpostPlugin(BasePlugin):
         if not prize_pool:
             return False
         import re
+
         cleaned = prize_pool.replace(",", "").replace("$", "")
         m = re.search(r"[\d.]+", cleaned)
         if not m:
@@ -208,6 +292,7 @@ class DevpostPlugin(BasePlugin):
     @staticmethod
     def _strip_html(text: str | None) -> str | None:
         import re
+
         if not text:
             return text
         return re.sub(r"<[^>]+>", "", text).strip()
@@ -218,29 +303,31 @@ class DevpostPlugin(BasePlugin):
         if not text:
             return None
         import re
-        from datetime import timedelta
+
         text = text.lower().strip()
-        # "about 2 hours left" → timedelta(hours=2)
-        m = re.match(r'(?:about\s+)?(\d+)\s+(minute|hour|day|week|month)s?\s+left', text)
+        m = re.match(
+            r"(?:about\s+)?(\d+)\s+(minute|hour|day|week|month)s?\s+left",
+            text,
+        )
         if m:
             num = int(m.group(1))
             unit = m.group(2)
             now = datetime.now(timezone.utc)
-            if unit == 'minute':
+            if unit == "minute":
                 return now + timedelta(minutes=num)
-            elif unit == 'hour':
+            elif unit == "hour":
                 return now + timedelta(hours=num)
-            elif unit == 'day':
+            elif unit == "day":
                 return now + timedelta(days=num)
-            elif unit == 'week':
+            elif unit == "week":
                 return now + timedelta(weeks=num)
-            elif unit == 'month':
+            elif unit == "month":
                 return now + timedelta(days=num * 30)
         # "a few hours left" / "less than an hour left"
-        if 'hour' in text:
+        if "hour" in text:
             return datetime.now(timezone.utc) + timedelta(hours=1)
-        if 'minute' in text or 'less than' in text:
-            return datetime.utcnow() + timedelta(minutes=30)
+        if "minute" in text or "less than" in text:
+            return datetime.now(timezone.utc) + timedelta(minutes=30)
         return None
 
     @staticmethod
@@ -250,25 +337,33 @@ class DevpostPlugin(BasePlugin):
             return None, None
         try:
             import re
-            parts = [p.strip() for p in re.split(r'\s[–\-—]\s', period, 1)]
+
+            parts = [
+                p.strip() for p in re.split(r"\s[–\-—]\s", period, 1)
+            ]
             if len(parts) != 2:
                 from dateutil.parser import parse
+
                 dt = parse(period).replace(tzinfo=timezone.utc)
                 return dt, dt
 
             start_str = parts[0]
             end_str = parts[1]
             from dateutil.parser import parse
+
             start = parse(start_str).replace(tzinfo=timezone.utc)
             try:
                 end = parse(end_str).replace(tzinfo=timezone.utc)
             except Exception:
-                # "31, 2026" or "29, 2026" → need month from start
                 try:
-                    end = parse(f"{start.strftime('%b')} {end_str}").replace(tzinfo=timezone.utc)
+                    end = parse(
+                        f"{start.strftime('%b')} {end_str}"
+                    ).replace(tzinfo=timezone.utc)
                 except Exception:
                     try:
-                        end = parse(f"{end_str}, {start.year}").replace(tzinfo=timezone.utc)
+                        end = parse(f"{end_str}, {start.year}").replace(
+                            tzinfo=timezone.utc
+                        )
                     except Exception:
                         end = start
             return start, end
@@ -286,8 +381,12 @@ class DevpostPlugin(BasePlugin):
         if not source_id:
             source_id = url.rstrip("/").split("/")[-1]
 
-        start_date, end_date = self._parse_period(h.get("submission_period_dates", ""))
-        precise_end = self._parse_time_left(h.get("time_left_to_submission", ""))
+        start_date, end_date = self._parse_period(
+            h.get("submission_period_dates", "")
+        )
+        precise_end = self._parse_time_left(
+            h.get("time_left_to_submission", "")
+        )
         if precise_end:
             end_date = precise_end
         themes_raw = h.get("themes", h.get("tags", []))
@@ -315,4 +414,3 @@ class DevpostPlugin(BasePlugin):
             prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
         )
-
