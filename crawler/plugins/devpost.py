@@ -36,7 +36,7 @@ class DevpostPlugin(BasePlugin):
                 # Navigate to the API endpoint — browser auto-solves WAF challenge
                 url = (
                     "https://devpost.com/api/hackathons"
-                    "?status=open&page=1&per_page=1&challenge_type[]=online"
+                    "?status=open&page=1&per_page=1"
                 )
                 resp = await page.goto(url, wait_until="networkidle", timeout=30000)
 
@@ -85,7 +85,6 @@ class DevpostPlugin(BasePlugin):
                             "status": "open",
                             "page": page,
                             "per_page": 100,
-                            "challenge_type[]": "online",
                         },
                     )
                     if resp.status_code != 200:
