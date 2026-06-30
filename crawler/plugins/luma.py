@@ -14,7 +14,7 @@ from config import REQUEST_TIMEOUT
 logger = logging.getLogger(__name__)
 
 MAX_CONCURRENT = 5
-LUMA_EVENT_URL = "https://lu.ma/{}"
+LUMA_EVENT_URL = "https://luma.com/{}"
 
 BROWSER_UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
@@ -24,10 +24,32 @@ BROWSER_UA = (
 # Categories on luma.com that are likely to contain hackathons
 HACKATHON_CATEGORIES = ["tech", "ai"]
 
+# Search queries for the discover API
+SEARCH_QUERIES = [
+    "hackathon",
+    "hack",
+    "thon",          # catches "IP-A-THON", "build-a-thon" etc.
+    "$100",          # events with cash prizes
+    "prize pool",
+]
+
+# Major tech hubs — search from each city to overcome geo-bias.
+# luma blocks some regions (403), so we stick to cities that work.
+CITY_COORDS = [
+    (40.7128, -74.0060),   # New York
+    (37.7749, -122.4194),  # San Francisco
+    (51.5074, -0.1278),    # London
+    (35.6762, 139.6503),   # Tokyo
+    (1.3521, 103.8198),    # Singapore
+    (52.5200, 13.4050),    # Berlin
+]
+
 # Keywords that indicate a hackathon event
 HACKATHON_KEYWORDS = [
     "hackathon", "hack", "buildathon", "codefest",
     "coding competition", "build competition",
+    "thon",           # IP-A-THON, build-a-thon, etc.
+    "challenge",
 ]
 
 
@@ -59,7 +81,12 @@ class LumaPlugin(BasePlugin):
                 return {}
 
     async def fetch(self) -> list[HackathonItem]:
-        """Scrape hackathons from luma.com by calling the discover API."""
+        """Scrape hackathons from luma.com by calling the discover API.
+
+        Luma's API is geo-biased — it only returns events near the
+        request's IP.  We overcome this by issuing searches from a list
+        of major tech-hub city coordinates so we get global coverage.
+        """
         items: list[HackathonItem] = []
 
         cookies = await self._get_browser_cookies()
@@ -76,46 +103,64 @@ class LumaPlugin(BasePlugin):
             cookies=cookies,
             timeout=REQUEST_TIMEOUT,
         ) as client:
-            # Collect events from multiple sources
             raw_events: dict[str, dict] = {}
 
-            # 1 — Search by keyword
-            for query in ["hackathon", "hack"]:
-                try:
-                    events = await self._fetch_events(client, search_query=query)
-                    for ev in events:
-                        eid = ev.get("api_id", "")
-                        if eid and eid not in raw_events:
-                            raw_events[eid] = ev
-                    logger.info(
-                        f"Luma search '{query}': {len(events)} events "
-                        f"(total unique: {len(raw_events)})"
-                    )
-                except Exception as e:
-                    logger.warning(f"Luma search '{query}' failed: {e}")
+            # Search from each city
+            for lat, lng in CITY_COORDS:
+                city_count = 0
+                # a) Keyword searches
+                for query in SEARCH_QUERIES:
+                    try:
+                        events = await self._fetch_events(
+                            client,
+                            search_query=query,
+                            latitude=lat,
+                            longitude=lng,
+                            max_pages=2,
+                        )
+                        for ev in events:
+                            eid = ev.get("api_id", "")
+                            if eid and eid not in raw_events:
+                                raw_events[eid] = ev
+                                city_count += 1
+                    except Exception as e:
+                        logger.debug(
+                            f"Luma search '{query}' @ ({lat:.1f},{lng:.1f}): {e}"
+                        )
 
-            # 2 — Browse categories
-            for cat in HACKATHON_CATEGORIES:
-                try:
-                    events = await self._fetch_events(client, slug=cat)
-                    for ev in events:
-                        eid = ev.get("api_id", "")
-                        if eid and eid not in raw_events:
-                            raw_events[eid] = ev
+                # b) Category browsing
+                for cat in HACKATHON_CATEGORIES:
+                    try:
+                        events = await self._fetch_events(
+                            client,
+                            slug=cat,
+                            latitude=lat,
+                            longitude=lng,
+                            max_pages=2,
+                        )
+                        for ev in events:
+                            eid = ev.get("api_id", "")
+                            if eid and eid not in raw_events:
+                                raw_events[eid] = ev
+                                city_count += 1
+                    except Exception as e:
+                        logger.debug(
+                            f"Luma cat '{cat}' @ ({lat:.1f},{lng:.1f}): {e}"
+                        )
+
+                if city_count:
                     logger.info(
-                        f"Luma category '{cat}': {len(events)} events "
+                        f"Luma: {city_count} new events from ({lat:.1f}, {lng:.1f}) "
                         f"(total unique: {len(raw_events)})"
                     )
-                except Exception as e:
-                    logger.warning(f"Luma category '{cat}' failed: {e}")
 
             if not raw_events:
-                logger.warning("Luma: no events found from any source")
+                logger.warning("Luma: no events found from any city")
                 return []
 
             logger.info(f"Luma: {len(raw_events)} unique events collected")
 
-            # Parse events and filter
+            # Parse events and filter for hackathons
             for ev in raw_events.values():
                 try:
                     event_data = ev.get("event", ev)
@@ -139,14 +184,12 @@ class LumaPlugin(BasePlugin):
             if items:
                 await self._scrape_all_details(client, items)
 
-            # Filter: only keep events with cash prize or keep all
-            # (luma events often don't have explicit prize info, so keep all hackathons)
-            all_count = len(items)
-            items = [it for it in items if self._has_cash_prize(it.prize_pool)]
-            if len(items) < all_count:
+            # Luma event pages rarely list explicit cash prizes even for
+            # real hackathons — keep all identified hackathons.
+            if items:
                 logger.info(
-                    f"Luma: {all_count - len(items)}/{all_count} filtered out "
-                    f"(no cash prize detected)"
+                    f"Luma: {len(items)} hackathon events kept "
+                    f"(no cash-prize filter for luma)"
                 )
 
         return items
@@ -156,7 +199,9 @@ class LumaPlugin(BasePlugin):
         client: httpx.AsyncClient,
         slug: str | None = None,
         search_query: str | None = None,
-        max_pages: int = 5,
+        latitude: float | None = None,
+        longitude: float | None = None,
+        max_pages: int = 2,
     ) -> list[dict]:
         """Fetch events from luma discover API, handling pagination."""
         events: list[dict] = []
@@ -165,6 +210,9 @@ class LumaPlugin(BasePlugin):
             params["slug"] = slug
         if search_query:
             params["search_query"] = search_query
+        if latitude is not None and longitude is not None:
+            params["latitude"] = str(latitude)
+            params["longitude"] = str(longitude)
 
         for page in range(max_pages):
             try:
@@ -173,10 +221,6 @@ class LumaPlugin(BasePlugin):
                     params=params,
                 )
                 if resp.status_code != 200:
-                    logger.warning(
-                        f"Luma API returned {resp.status_code} "
-                        f"(slug={slug}, query={search_query}, page={page})"
-                    )
                     break
 
                 data = resp.json()
@@ -185,15 +229,16 @@ class LumaPlugin(BasePlugin):
                     break
                 events.extend(entries)
 
-                # Check for pagination cursor
-                cursor = data.get("next_cursor") or data.get("pagination_cursor")
+                cursor = (
+                    data.get("next_cursor") or data.get("pagination_cursor")
+                )
                 if cursor:
                     params["pagination_cursor"] = cursor
                 else:
                     break
 
             except Exception as e:
-                logger.warning(f"Luma API page {page} error: {e}")
+                logger.debug(f"Luma API page {page} error: {e}")
                 break
 
         return events
@@ -208,7 +253,7 @@ class LumaPlugin(BasePlugin):
             if kw in name_lower:
                 return True
 
-        # Check event_type or tags if available
+        # Check event_type
         event_type = (event_data.get("event_type") or "").lower()
         if "hackathon" in event_type:
             return True
@@ -216,12 +261,14 @@ class LumaPlugin(BasePlugin):
         # Check topic_tags
         topic_tags = event_data.get("topic_tags") or []
         for tag in topic_tags:
+            tag_name = ""
             if isinstance(tag, dict):
                 tag_name = (tag.get("name") or "").lower()
             else:
                 tag_name = str(tag).lower()
-            if "hackathon" in tag_name or "hack" in tag_name:
-                return True
+            for kw in HACKATHON_KEYWORDS:
+                if kw in tag_name:
+                    return True
 
         return False
 
@@ -242,9 +289,7 @@ class LumaPlugin(BasePlugin):
                     if detail.get("prize_pool") and not item.prize_pool:
                         item.prize_pool = detail["prize_pool"]
                     logger.debug(
-                        f"Luma detail scraped: {item.title} "
-                        f"(desc: {bool(detail.get('description'))}, "
-                        f"prize: {bool(detail.get('prize_pool'))})"
+                        f"Luma detail scraped: {item.title}"
                     )
 
         await asyncio.gather(*[scrape_one(item) for item in items])
@@ -267,11 +312,10 @@ class LumaPlugin(BasePlugin):
             if meta_desc and meta_desc.get("content"):
                 result["description"] = meta_desc["content"].strip()
 
-            # Extract from __NEXT_DATA__ for structured data
+            # Extract from __NEXT_DATA__
             next_data = soup.find("script", id="__NEXT_DATA__")
             if next_data and next_data.string:
                 import json
-
                 try:
                     data = json.loads(next_data.string)
                     page_props = (
@@ -281,33 +325,27 @@ class LumaPlugin(BasePlugin):
                     )
                     event_data = page_props.get("data", page_props)
 
-                    # Try to get event description
                     ev = event_data.get("event", event_data)
                     if not result.get("description") and ev.get("description"):
                         result["description"] = ev["description"]
 
-                    # Try to extract about/description from calendar
                     cal = event_data.get("calendar", {})
-                    if not result.get("description") and cal.get("description_short"):
+                    if (
+                        not result.get("description")
+                        and cal.get("description_short")
+                    ):
                         result["description"] = cal["description_short"]
 
-                    # Check for long description
                     if ev.get("description_long") or ev.get("description_html"):
                         result["about"] = ev.get(
                             "description_long"
                         ) or ev.get("description_html")
-
-                    # Look for prize-related info in ticket info
-                    ticket_info = event_data.get("ticket_info") or ev.get(
-                        "ticket_info", {}
-                    )
                 except json.JSONDecodeError:
                     pass
 
-            # Fallback: extract text from the main content area
+            # Fallback: extract text from the body
             if not result.get("description"):
                 body_text = soup.get_text(" ", strip=True)
-                # Get first meaningful paragraph
                 for para in body_text.split("."):
                     para = para.strip()
                     if len(para) > 80 and len(para) < 500:
@@ -333,7 +371,7 @@ class LumaPlugin(BasePlugin):
 
         amounts = []
 
-        # Pattern: "$X in prizes" / "Prize pool: $X" / "$X cash prize"
+        # "$X in prizes" / "Prize pool: $X"
         for m in re.finditer(
             r"(\$|€|£|USD)\s*([\d,]+(?:\.[\d]+)?)\s*(?:in\s+)?(?:cash\s*)?(?:prize|reward|pool)",
             text,
@@ -346,7 +384,7 @@ class LumaPlugin(BasePlugin):
             except ValueError:
                 pass
 
-        # Pattern: "prize pool of $X"
+        # "prize pool of $X"
         for m in re.finditer(
             r"(?:prize|reward)\s*(?:pool|fund)?\s*(?:of|:)?\s*(?:up\s*to\s*)?(\$|€|£|USD)\s*([\d,]+)",
             text,
@@ -370,13 +408,7 @@ class LumaPlugin(BasePlugin):
         """Return True if prize_pool indicates a non-zero cash prize."""
         if not prize_pool:
             return False
-        cleaned = (
-            prize_pool.replace(",", "")
-            .replace("$", "")
-            .replace("€", "")
-            .replace("£", "")
-            .replace("USD", "")
-        )
+        cleaned = re.sub(r"[^\d.]", "", prize_pool.replace(",", ""))
         m = re.search(r"[\d.]+", cleaned)
         if not m:
             return False
@@ -419,7 +451,7 @@ class LumaPlugin(BasePlugin):
         if end_date < now:
             return None
 
-        # Extract location info for description context
+        # Location info
         geo = ev.get("geo_address_info") or {}
         location_parts = []
         for key in ("city", "region"):
@@ -428,15 +460,11 @@ class LumaPlugin(BasePlugin):
                 location_parts.append(val)
         location = ", ".join(location_parts) if location_parts else None
 
-        # Build description from available fields
         description = ev.get("description") or None
         if not description and location:
             description = f"Location: {location}"
 
-        # Timezone
         tz = ev.get("timezone") or None
-
-        # Cover image
         image_url = ev.get("cover_url") or None
 
         # Tags from topic_tags
@@ -460,6 +488,6 @@ class LumaPlugin(BasePlugin):
             start_date=start_date,
             end_date=end_date,
             timezone=tz,
-            prize_pool=None,  # Will be filled by detail scraper
+            prize_pool=None,  # Filled by detail scraper
             themes=themes,
         )
