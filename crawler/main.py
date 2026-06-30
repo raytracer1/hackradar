@@ -22,6 +22,7 @@ from plugins.taikai import TaikaiPlugin
 from plugins.lablab import LablabPlugin
 from plugins.luma import LumaPlugin
 from plugins.kaggle import KagglePlugin
+from plugins.mlh import MLHPlugin
 from scheduler import Scheduler
 from config import CRAWL_INTERVAL_SECONDS
 
@@ -40,6 +41,7 @@ def get_plugins():
         LablabPlugin(),
         LumaPlugin(),
         KagglePlugin(),
+        MLHPlugin(),
     ]
 
 
