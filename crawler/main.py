@@ -20,6 +20,7 @@ from plugins.devpost import DevpostPlugin
 from plugins.dorahacks import DorahacksPlugin
 from plugins.taikai import TaikaiPlugin
 from plugins.lablab import LablabPlugin
+from plugins.luma import LumaPlugin
 from scheduler import Scheduler
 from config import CRAWL_INTERVAL_SECONDS
 
@@ -36,6 +37,7 @@ def get_plugins():
         DorahacksPlugin(),
         TaikaiPlugin(),
         LablabPlugin(),
+        LumaPlugin(),
     ]
 
 
