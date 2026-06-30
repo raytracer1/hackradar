@@ -36,7 +36,7 @@ class DevpostPlugin(BasePlugin):
                 # Navigate to the API endpoint — browser auto-solves WAF challenge
                 url = (
                     "https://devpost.com/api/hackathons"
-                    "?status=open&page=1&per_page=1"
+                    "?status[]=upcoming&status[]=open&order_by=deadline&page=1&per_page=1"
                 )
                 resp = await page.goto(url, wait_until="networkidle", timeout=30000)
 
@@ -82,7 +82,8 @@ class DevpostPlugin(BasePlugin):
                     resp = await client.get(
                         "https://devpost.com/api/hackathons",
                         params={
-                            "status": "open",
+                            "status": ["upcoming", "open"],
+                            "order_by": "deadline",
                             "page": page,
                             "per_page": 100,
                         },
