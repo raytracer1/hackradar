@@ -81,11 +81,18 @@ class Scheduler:
                 items = await plugin.fetch()
                 kept = 0
                 dropped = 0
+                # Sources where prizes come from sponsors rather than a
+                # fixed pool — skip the global cash-prize filter.
+                SKIP_PRIZE_FILTER = {"mlh", "luma"}
+
                 for item in items:
                     d = item_to_dict(item)
                     if d["sourceId"] not in seen:
                         seen.add(d["sourceId"])
-                        if has_cash_prize(d["prizePool"]):
+                        if (
+                            d["source"] in SKIP_PRIZE_FILTER
+                            or has_cash_prize(d["prizePool"])
+                        ):
                             all_items.append(d)
                             kept += 1
                         else:
