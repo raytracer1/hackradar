@@ -215,9 +215,6 @@ export default function Home() {
             onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
             onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
             onSortByChange={(v) => updateFilter('sortBy', v)}
-            platforms={platforms}
-            selectedSources={selectedSources}
-            onSourceToggle={handleSourceToggle}
           />
           <button
             onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
@@ -229,6 +226,28 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {/* Platforms row — separate line */}
+      {platforms.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {platforms.map((p) => {
+            const active = !selectedSources.has(p.slug);
+            return (
+              <button
+                key={p.slug}
+                onClick={() => handleSourceToggle(p.slug)}
+                className={`h-10 rounded-xl border px-3 text-xs font-medium transition ${
+                  active
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-500'
+                }`}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
