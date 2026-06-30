@@ -24,6 +24,7 @@ from plugins.luma import LumaPlugin
 from plugins.kaggle import KagglePlugin
 from plugins.mlh import MLHPlugin
 from plugins.hackquest import HackquestPlugin
+from plugins.sinceai import SinceaiPlugin
 from scheduler import Scheduler
 from config import CRAWL_INTERVAL_SECONDS
 
@@ -44,6 +45,7 @@ def get_plugins():
         KagglePlugin(),
         MLHPlugin(),
         HackquestPlugin(),
+        SinceaiPlugin(),
     ]
 
 
