@@ -81,8 +81,8 @@ class Scheduler:
                 items = await plugin.fetch()
                 kept = 0
                 dropped = 0
-                # Sources where prizes come from sponsors rather than a
-                # fixed pool — skip the global cash-prize filter.
+                # mlh / luma events have sponsor prizes without fixed
+                # amounts — skip the global cash-prize filter for them.
                 SKIP_PRIZE_FILTER = {"mlh", "luma"}
 
                 for item in items:
