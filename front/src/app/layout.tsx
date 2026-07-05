@@ -127,6 +127,67 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-7xl px-4 pt-4 pb-4 sm:px-6 lg:px-8">
           {children}
         </main>
+        <footer className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
+          <div className="border-t border-gray-200 py-8">
+            <div className="grid gap-8 sm:grid-cols-3">
+              {/* Brand */}
+              <div>
+                <a href="/" className="text-lg font-bold text-gray-900">
+                  HackRadar
+                </a>
+                <p className="mt-2 text-sm text-gray-500 leading-relaxed">
+                  Discover cash prize hackathons from 14 platforms — all in one place.
+                </p>
+              </div>
+
+              {/* Links */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Links</h4>
+                <ul className="mt-3 space-y-2">
+                  <li>
+                    <a href="/blog" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                      Blog
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://github.com/raytracer1/hackradar"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      GitHub
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Friendly Links */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Friendly Links</h4>
+                <ul className="mt-3 space-y-2">
+                  <li>
+                    <a
+                      href="https://www.hackdemo.win"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+                    >
+                      HackDemo
+                    </a>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      Ship a pitch-ready demo before the hackathon deadline
+                    </p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
+              &copy; {new Date().getFullYear()} HackRadar. All rights reserved.
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );
