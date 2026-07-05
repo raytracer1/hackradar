@@ -395,7 +395,7 @@ export default function BlogPost() {
                 href="/"
                 className="font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
               >
-                hackradar.io
+                hackradar.win
               </Link>{' '}
               — no signup, no email, just a feed of upcoming cash prize hackathons, updated
               regularly.
@@ -403,7 +403,7 @@ export default function BlogPost() {
             <p className="mt-3">
               Found a hackathon that's missing? The crawler is open source —{' '}
               <a
-                href="https://github.com/bijun/hackradar"
+                href="https://github.com/raytracer1/hackradar"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
