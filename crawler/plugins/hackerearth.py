@@ -57,9 +57,6 @@ class HackerEarthPlugin(BasePlugin):
 
         source_id = href.rstrip("/").split("/")[-1] if href else title.replace(" ", "-").lower()
 
-        else:
-            mode = "online"
-
         # Try to find date
         date_el = card.select_one(".date, .challenge-date, time")
         date_text = date_el.get_text(strip=True) if date_el else ""
