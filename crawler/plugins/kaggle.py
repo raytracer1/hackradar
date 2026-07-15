@@ -18,12 +18,6 @@ BROWSER_UA = (
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
 
-HACKATHON_KEYWORDS = [
-    "hackathon", "hack", "buildathon", "codefest",
-    "coding competition", "coding challenge",
-]
-
-
 class KagglePlugin(BasePlugin):
     @property
     def name(self) -> str:
@@ -45,7 +39,6 @@ class KagglePlugin(BasePlugin):
             page = await context.new_page()
 
             # ---- collect every ListCompetitions response the page triggers ----
-            done = asyncio.Event()
 
             async def on_response(response):
                 if "ListCompetitions" not in response.url:
@@ -95,16 +88,10 @@ class KagglePlugin(BasePlugin):
             f"Kaggle: {len(raw_comps)} unique competitions captured"
         )
 
-        # Parse and filter for hackathons
+        # Parse and keep all competitions with cash prizes
         now = datetime.now(timezone.utc)
         for comp in raw_comps.values():
             try:
-                is_hackathon = comp.get("hackathon", False)
-                title = (comp.get("title") or "").strip()
-
-                if not is_hackathon and not self._matches_keywords(title):
-                    continue
-
                 # Skip ended competitions
                 deadline_str = comp.get("deadline", "")
                 try:
@@ -124,7 +111,7 @@ class KagglePlugin(BasePlugin):
                 logger.error(f"Kaggle parse error: {e}")
 
         logger.info(
-            f"Kaggle: {len(items)} hackathons identified "
+            f"Kaggle: {len(items)} active competitions identified "
             f"out of {len(raw_comps)} competitions"
         )
 
@@ -139,14 +126,6 @@ class KagglePlugin(BasePlugin):
 
         return items
 
-    @staticmethod
-    def _matches_keywords(title: str) -> bool:
-        """Check if title contains hackathon-related keywords."""
-        title_lower = title.lower()
-        for kw in HACKATHON_KEYWORDS:
-            if kw in title_lower:
-                return True
-        return False
 
     def _parse(self, comp: dict) -> HackathonItem | None:
         """Parse a Kaggle competition dict into a HackathonItem."""
