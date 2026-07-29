@@ -23,9 +23,18 @@
       "NEXT_PUBLIC_ADS_ID": "ca-pub-7675040875330859"
   	},
 	"observability": {
-		"logs": {
-		"enabled": false,
-		"invocation_logs": true
-		}
-	}
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "logs": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "persist": true,
+        "invocation_logs": true
+      },
+      "traces": {
+        "enabled": false,
+        "persist": true,
+        "head_sampling_rate": 1
+      }
+    }
 }
