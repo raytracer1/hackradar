@@ -8,7 +8,7 @@ from config import USER_AGENT, REQUEST_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-DORA_API = "https://dorahacks.io/api/hackathon/"
+DORA_API = "https://dorahacks.io/api/v1/hub/hackathons"
 DORA_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept": "application/json",
@@ -29,12 +29,13 @@ class DorahacksPlugin(BasePlugin):
             headers=DORA_HEADERS,
             timeout=REQUEST_TIMEOUT,
         ) as client:
+            now = datetime.now(timezone.utc)
             page = 1
             while True:
                 try:
                     resp = await client.get(
                         DORA_API,
-                        params={"page": page, "page_size": 24, "status": "ongoing"},
+                        params={"page": page, "page_size": 50},
                     )
                     if resp.status_code != 200:
                         logger.warning(f"DoraHacks page {page} returned {resp.status_code}")
@@ -46,16 +47,29 @@ class DorahacksPlugin(BasePlugin):
 
                     logger.info(f"DoraHacks page {page}: {len(results)} items (total: {data.get('count', '?')})")
 
+                    page_ended = 0
                     for h in results:
                         try:
                             item = self._parse(h)
-                            if item:
-                                items.append(item)
+                            if item is None:
+                                continue
+                            # Skip ended hackathons
+                            if item.end_date < now:
+                                page_ended += 1
+                                continue
+                            items.append(item)
                         except Exception as e:
                             logger.error(f"DoraHacks parse error: {e}")
 
-                    # Check if there's a next page
-                    if data.get("next") is None:
+                    # Stop when fewer results than page_size (last page)
+                    if len(results) < 50:
+                        break
+
+                    # Early stop: all items on page ended → remaining pages older
+                    if page_ended == len(results):
+                        logger.info(
+                            "DoraHacks: entire page ended, stopping pagination"
+                        )
                         break
                     page += 1
                 except Exception as e:
@@ -80,33 +94,46 @@ class DorahacksPlugin(BasePlugin):
 
         url = f"https://dorahacks.io/hackathon/{uname}"
 
-        # Parse timestamps
-        start_ts = h.get("start_time")
-        end_ts = h.get("end_time")
+        # Parse timestamps (new API uses timeline_start / timeline_end)
+        start_ts = h.get("timeline_start")
+        end_ts = h.get("timeline_end")
         start_date = datetime.fromtimestamp(start_ts, tz=timezone.utc) if start_ts else datetime.now(timezone.utc)
         end_date = datetime.fromtimestamp(end_ts, tz=timezone.utc) if end_ts else datetime.now(timezone.utc)
 
-        # Prize: bonus_price is the total prize in USD
+        # Prize: bonus_price + bonus_token (e.g. "USD 200,000")
         bonus = h.get("bonus_price") or 0
-        prize_pool = f"${bonus:,}" if bonus else None
+        token = (h.get("bonus_token") or "USD").strip()
+        prize_pool = f"{token} {bonus:,}" if bonus else None
 
-        # Themes from ecosystem
+        # Themes from ecosystem and tags
+        themes: list[str] = []
         ecosystem = h.get("ecosystem") or ""
-        themes = [t.strip() for t in ecosystem.split(",") if t.strip()]
+        for t in ecosystem.split(","):
+            t = t.strip()
+            if t and t not in themes:
+                themes.append(t)
+        tags = h.get("tags") or ""
+        for t in tags.split(","):
+            t = t.strip()
+            if t and t not in themes:
+                themes.append(t)
 
-        # Build description from description + tab_set content
+        # Venue info
+        venue_form = (h.get("venue_form") or "").strip()
+        venue_name = (h.get("venue_name") or "").strip()
+        venue_parts = [p for p in [venue_form, venue_name] if p]
+        location = " | ".join(venue_parts) if venue_parts else None
+
+        # Build description from available fields
         desc_parts: list[str] = []
-        desc_text = h.get("description")
-        if desc_text:
-            desc_parts.append(desc_text.strip())
+        if location:
+            desc_parts.append(location)
+        owner = h.get("owner") or {}
+        org_name = (owner.get("name") or "").strip()
+        if org_name:
+            desc_parts.append(f"Organizer: {org_name}")
 
-        for tab in h.get("tab_set") or []:
-            tab_name = tab.get("name", "")
-            tab_desc = tab.get("description", "")
-            if tab_desc:
-                desc_parts.append(f"{tab_name}\n{tab_desc.strip()}")
-
-        description = "\n\n".join(desc_parts) if desc_parts else None
+        description = "\n".join(desc_parts) if desc_parts else None
 
         return HackathonItem(
             source_id=f"dorahacks_{h['id']}",
