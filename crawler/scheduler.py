@@ -51,6 +51,7 @@ def item_to_dict(item) -> dict:
         "whatToBuild": item.what_to_build,
         "whatToSubmit": item.what_to_submit,
         "prizesDetail": item.prizes_detail,
+        "eligibility": item.eligibility,
         "url": item.url,
         "imageUrl": item.image_url,
         "startDate": item.start_date.isoformat() if hasattr(item.start_date, "isoformat") else str(item.start_date),

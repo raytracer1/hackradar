@@ -16,6 +16,7 @@ interface HackathonData {
   whatToBuild: string | null;
   whatToSubmit: string | null;
   prizesDetail: string | null;
+  eligibility: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;
@@ -117,7 +118,7 @@ export default function Home() {
     if (!showKnown && knownSet.has(h.id)) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();
-      if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q) && !(h.about || '').toLowerCase().includes(q) && !(h.whatToBuild || '').toLowerCase().includes(q) && !(h.whatToSubmit || '').toLowerCase().includes(q) && !(h.prizesDetail || '').toLowerCase().includes(q)) return false;
+      if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q) && !(h.about || '').toLowerCase().includes(q) && !(h.whatToBuild || '').toLowerCase().includes(q) && !(h.whatToSubmit || '').toLowerCase().includes(q) && !(h.prizesDetail || '').toLowerCase().includes(q) && !(h.eligibility || '').toLowerCase().includes(q)) return false;
     }
     if (filters.prizeMin) {
       if (parsePrize(h.prizePool) < parseFloat(filters.prizeMin)) return false;
@@ -303,6 +304,7 @@ export default function Home() {
                       whatToBuild={selected.whatToBuild}
                       whatToSubmit={selected.whatToSubmit}
                       prizesDetail={selected.prizesDetail}
+                      eligibility={selected.eligibility}
                       url={selected.url}
                       imageUrl={selected.imageUrl}
                       startDate={selected.startDate}

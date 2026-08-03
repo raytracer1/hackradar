@@ -7,6 +7,7 @@ export interface HackathonData {
   whatToBuild: string | null;
   whatToSubmit: string | null;
   prizesDetail: string | null;
+  eligibility: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;

@@ -12,6 +12,7 @@ class HackathonItem(BaseModel):
     what_to_build: Optional[str] = None
     what_to_submit: Optional[str] = None
     prizes_detail: Optional[str] = None
+    eligibility: Optional[str] = None
     url: str
     image_url: Optional[str] = None
     start_date: datetime

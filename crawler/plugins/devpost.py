@@ -180,7 +180,8 @@ class DevpostPlugin(BasePlugin):
     def _extract_sections(self, article) -> dict[str, str]:
         """Extract sections from headings inside an article element.
         Matches: about -> about, build -> whatToBuild,
-                 submit -> whatToSubmit, prize -> prizesDetail.
+                 submit -> whatToSubmit, prize -> prizesDetail,
+                 who can participate -> eligibility.
         """
         result: dict = {}
         for heading in article.find_all(["h2", "h3", "h4"]):
@@ -194,6 +195,8 @@ class DevpostPlugin(BasePlugin):
                 key = "whatToSubmit"
             elif "prize" in text:
                 key = "prizesDetail"
+            elif "participat" in text:
+                key = "eligibility"
             if not key:
                 continue
 
@@ -213,7 +216,7 @@ class DevpostPlugin(BasePlugin):
         self, client: httpx.AsyncClient, url: str
     ) -> dict | None:
         """Scrape hackathon detail page for
-        about / whatToBuild / whatToSubmit / prizesDetail.
+        about / whatToBuild / whatToSubmit / prizesDetail / eligibility.
         """
         try:
             resp = await client.get(url)
@@ -244,14 +247,53 @@ class DevpostPlugin(BasePlugin):
 
             # For still-missing keys, fall back to whole-page search
             fallback = self._extract_sections(soup)
-            for key in ("about", "whatToBuild", "whatToSubmit", "prizesDetail"):
+            for key in ("about", "whatToBuild", "whatToSubmit", "prizesDetail", "eligibility"):
                 if key not in result and key in fallback:
                     result[key] = fallback[key]
+
+            # Structured eligibility sidebar: <h6>Who can participate</h6>
+            # + <ul id="eligibility-list">. Prefer it over free-text matches.
+            eligibility = self._extract_eligibility(soup)
+            if eligibility:
+                result["eligibility"] = eligibility
 
             return result if result else None
         except Exception as e:
             logger.warning(f"Detail scraping failed for {url}: {e}")
             return None
+
+    @staticmethod
+    def _extract_eligibility(soup) -> str | None:
+        """Extract the structured 'Who can participate' list from the
+        requirements sidebar: an <h6> heading followed by
+        <ul id="eligibility-list">. Joins list items with ' / '.
+        """
+        heading = soup.find(
+            "h6",
+            string=lambda t: t and "participat" in t.lower(),
+        )
+        if not heading:
+            return None
+        ul = heading.find_next("ul", id="eligibility-list")
+        if not ul:
+            return None
+        items = []
+        for li in ul.find_all("li"):
+            # Keep whitespace between nested spans (get_text(strip=True)
+            # glues "excluding" and "standard exceptions" together).
+            text = li.get_text(" ", strip=True)
+            if not text:
+                continue
+            # Devpost shows the concrete excluded countries as a tooltip
+            # (title attr) on "standard exceptions" — expand it inline.
+            tip = li.find("span", attrs={"title": True})
+            if tip and tip.get("title") and "standard exceptions" in text:
+                text = text.replace(
+                    "standard exceptions",
+                    f"standard exceptions ({tip['title']})",
+                )
+            items.append(text)
+        return " / ".join(items) if items else None
 
     async def _scrape_all_details(
         self, client: httpx.AsyncClient, items: list[HackathonItem]
@@ -267,6 +309,7 @@ class DevpostPlugin(BasePlugin):
                     item.what_to_build = data.get("whatToBuild")
                     item.what_to_submit = data.get("whatToSubmit")
                     item.prizes_detail = data.get("prizesDetail")
+                    item.eligibility = data.get("eligibility")
                     logger.debug(
                         f"Detail scraped: {item.title} ({len(data)} sections)"
                     )

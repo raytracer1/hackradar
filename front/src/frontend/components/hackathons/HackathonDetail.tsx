@@ -7,6 +7,7 @@ interface HackathonDetailProps {
   whatToBuild: string | null;
   whatToSubmit: string | null;
   prizesDetail: string | null;
+  eligibility: string | null;
   url: string;
   imageUrl: string | null;
   startDate: string;
@@ -20,7 +21,7 @@ interface HackathonDetailProps {
 }
 
 export default function HackathonDetail({
-  title, description, about, whatToBuild, whatToSubmit, prizesDetail,
+  title, description, about, whatToBuild, whatToSubmit, prizesDetail, eligibility,
   url, imageUrl, startDate, endDate,
   timezone, prizePool, themes, platform, known, onMarkKnown,
 }: HackathonDetailProps) {
@@ -64,6 +65,12 @@ export default function HackathonDetail({
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Prize Pool</span>
             <p className="mt-1 text-lg font-bold text-emerald-600">{prizePool}</p>
+          </div>
+        )}
+        {eligibility && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Who can participate</span>
+            <p className="mt-1 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{eligibility}</p>
           </div>
         )}
       </div>
