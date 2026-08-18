@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import logging
 from datetime import datetime, timezone
@@ -9,6 +10,9 @@ from config import USER_AGENT, REQUEST_TIMEOUT
 logger = logging.getLogger(__name__)
 
 DORA_API = "https://dorahacks.io/api/v1/hub/hackathons"
+DORA_MAX_RETRIES = 3
+DORA_BACKOFF_BASE = 2  # seconds, doubled per retry (2s → 4s → 8s)
+DORA_PAGE_DELAY = 2  # seconds between page requests (API rate-limits rapid calls)
 DORA_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept": "application/json",
@@ -33,12 +37,9 @@ class DorahacksPlugin(BasePlugin):
             page = 1
             while True:
                 try:
-                    resp = await client.get(
-                        DORA_API,
-                        params={"page": page, "page_size": 50},
-                    )
-                    if resp.status_code != 200:
-                        logger.warning(f"DoraHacks page {page} returned {resp.status_code}")
+                    resp = await self._get_page(client, page)
+                    if resp is None:
+                        logger.warning(f"DoraHacks page {page}: giving up after retries")
                         break
                     data = resp.json()
                     results = data.get("results", [])
@@ -72,6 +73,8 @@ class DorahacksPlugin(BasePlugin):
                         )
                         break
                     page += 1
+                    # Be nice to the API between page requests
+                    await asyncio.sleep(DORA_PAGE_DELAY)
                 except Exception as e:
                     logger.warning(f"DoraHacks page {page} error: {e}")
                     break
@@ -85,14 +88,51 @@ class DorahacksPlugin(BasePlugin):
 
         return items
 
+    async def _get_page(self, client: httpx.AsyncClient, page: int) -> httpx.Response | None:
+        """Fetch one page with retries/backoff on rate limits (405/429) and errors."""
+        for attempt in range(DORA_MAX_RETRIES + 1):
+            try:
+                resp = await client.get(
+                    DORA_API,
+                    params={"page": page, "page_size": 50},
+                )
+                if resp.status_code == 200:
+                    return resp
+            except Exception as e:
+                if attempt < DORA_MAX_RETRIES:
+                    logger.warning(f"DoraHacks page {page} error: {e} (attempt {attempt + 1})")
+                else:
+                    logger.warning(f"DoraHacks page {page} error: {e}")
+                    return None
+                await asyncio.sleep(DORA_BACKOFF_BASE * (2 ** attempt))
+                continue
+
+            if attempt < DORA_MAX_RETRIES:
+                backoff = DORA_BACKOFF_BASE * (2 ** attempt)
+                logger.warning(
+                    f"DoraHacks page {page} returned {resp.status_code}, "
+                    f"retrying in {backoff}s ({attempt + 1}/{DORA_MAX_RETRIES})"
+                )
+                await asyncio.sleep(backoff)
+            else:
+                logger.warning(f"DoraHacks page {page} returned {resp.status_code}, giving up")
+                return None
+
     def _parse(self, h: dict) -> HackathonItem | None:
         title = (h.get("title") or "").strip()
-        uname = (h.get("uname") or "").strip()
-
-        if not title or not uname:
+        if not title:
             return None
 
-        url = f"https://dorahacks.io/hackathon/{uname}"
+        uname = (h.get("uname") or "").strip()
+        if not uname:
+            logger.debug(
+                "DoraHacks: item id=%s '%s' has no uname, using id-based URL",
+                h.get("id"),
+                title,
+            )
+            url = f"https://dorahacks.io/hackathon/{h['id']}/detail"
+        else:
+            url = f"https://dorahacks.io/hackathon/{uname}"
 
         # Parse timestamps (new API uses timeline_start / timeline_end)
         start_ts = h.get("timeline_start")
