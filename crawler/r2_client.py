@@ -1,10 +1,11 @@
 import json
 import logging
+import urllib.request
 import boto3
 from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
-from config import R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET
+from config import R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET, FRONT_BASE_URL, CRAWLER_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,29 @@ def _list_keys(s3, prefix: str) -> list[str]:
 
 CHUNK_SIZE = 200
 
+def notify_front(version: str) -> None:
+    """Tell the frontend the data has been refreshed so it can revalidate its cache."""
+    if not CRAWLER_API_KEY:
+        logger.warning("CRAWLER_API_KEY not set, skipping frontend notification")
+        return
+    try:
+        req = urllib.request.Request(
+            f"{FRONT_BASE_URL}/api/internal/revalidate",
+            data=json.dumps({"version": version}).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-crawler-key": CRAWLER_API_KEY,
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            logger.info(f"Frontend notified (version={version}): HTTP {resp.status}")
+    except Exception as e:
+        # Never fail the crawl because the notification failed.
+        # The frontend cache will simply stay stale until the next cycle.
+        logger.error(f"Failed to notify frontend: {e}")
+
+
 def upload_hackathons(items: list[dict]) -> bool:
     """
     Atomic upload with versioning and chunking:
@@ -115,6 +139,7 @@ def upload_hackathons(items: list[dict]) -> bool:
             _delete_key(s3, old_single)
 
         logger.info(f"Upload complete: version={version}")
+        notify_front(version)
         return True
 
     except Exception as e:
