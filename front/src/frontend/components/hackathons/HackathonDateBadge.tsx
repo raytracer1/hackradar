@@ -1,8 +1,11 @@
 function formatDate(dateStr: string): string {
+  // Fixed UTC so the detail panel matches the list dates (see
+  // HackathonListItem — timezone-dependent rendering breaks hydration).
   return new Date(dateStr).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 

@@ -7,8 +7,19 @@ import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters'
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
 import EmptyState from '@/frontend/components/ui/EmptyState';
 
-interface HackathonData {
-  id: string;
+// Lightweight list item — the only data the server sends down. Full details
+// are fetched on demand from /api/hackathons/[id] when an item is selected.
+interface HackathonListData {
+  sourceId: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  prizePool: string | null;
+  source: string;
+  platform: { name: string; slug: string };
+}
+
+interface HackathonDetailData {
   title: string;
   description: string | null;
   about: string | null;
@@ -23,7 +34,9 @@ interface HackathonData {
   timezone: string | null;
   prizePool: string | null;
   themes: string | string[];
-  platform: { name: string; slug: string };
+  sourceId: string;
+  source: string;
+  status: string;
 }
 
 const DISPLAY = 20;
@@ -54,14 +67,23 @@ function ShinyText({ children, className = '' }: { children: React.ReactNode; cl
 export default function HomeClient({
   initialData,
   initialPlatforms,
+  initialNow,
 }: {
-  initialData: HackathonData[];
+  initialData: HackathonListData[];
   initialPlatforms: { slug: string; name: string }[];
+  initialNow: number;
 }) {
-  const [allData, setAllData] = useState<HackathonData[]>(initialData);
+  const [allData, setAllData] = useState<HackathonListData[]>(initialData);
   const [displayCount, setDisplayCount] = useState(DISPLAY);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>(initialPlatforms);
+  // Reference clock: equals the server render time until hydration, so the
+  // first client render computes the same ended-filter and countdown text as
+  // the server HTML (hydration-safe). Refreshed after mount.
+  const [now, setNow] = useState(initialNow);
+  // Full details, fetched lazily per selected item
+  const [detailCache, setDetailCache] = useState<Record<string, HackathonDetailData>>({});
+  const [loadingDetail, setLoadingDetail] = useState(false);
   // Start empty so the first client render matches the server HTML; the real
   // known set is loaded after hydration in the mount effect below.
   const [knownSet, setKnownSet] = useState<Set<string>>(new Set());
@@ -75,6 +97,9 @@ export default function HomeClient({
   // has been adopted, so the first client render always matches it.
   useEffect(() => {
     try { setKnownSet(new Set(JSON.parse(localStorage.getItem('known') || '[]'))); } catch {}
+    setNow(Date.now());
+    // Keep countdowns roughly fresh (per minute is enough for the list)
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
     setHydrated(true);
     const sp = new URLSearchParams(window.location.search);
     setFilters({
@@ -95,8 +120,25 @@ export default function HomeClient({
       setDisplayCount(DISPLAY);
     };
     window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      clearInterval(timer);
+    };
   }, []);
+
+  // Fetch the selected item's full details on demand
+  useEffect(() => {
+    if (!selectedId) return;
+    if (detailCache[selectedId]) return;
+    setLoadingDetail(true);
+    fetch(`/api/hackathons/${encodeURIComponent(selectedId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && d.sourceId) setDetailCache((c) => ({ ...c, [selectedId]: d }));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDetail(false));
+  }, [selectedId, detailCache]);
 
   function parsePrize(text: string | null): number {
     if (!text) return 0;
@@ -114,20 +156,22 @@ export default function HomeClient({
     localStorage.setItem('known', JSON.stringify([...next]));
   };
 
-  const knownCount = allData.filter((h) => knownSet.has(h.id)).length;
+  const knownCount = allData.filter((h) => knownSet.has(h.sourceId)).length;
 
   const filtered = allData.filter((h) => {
-    // Hide ended hackathons
-    if (new Date(h.endDate).getTime() < Date.now()) return false;
+    // Hide ended hackathons — using `now` (server render time until
+    // hydration) so the first client render matches the server HTML
+    if (new Date(h.endDate).getTime() < now) return false;
     // Known/unknown filter — applied only after hydration so the first
     // client render matches the server HTML exactly
     if (hydrated) {
-      if (showKnown && !knownSet.has(h.id)) return false;
-      if (!showKnown && knownSet.has(h.id)) return false;
+      if (showKnown && !knownSet.has(h.sourceId)) return false;
+      if (!showKnown && knownSet.has(h.sourceId)) return false;
     }
     if (filters.search) {
+      // The list payload only carries title/platform — search those
       const q = filters.search.toLowerCase();
-      if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q) && !(h.about || '').toLowerCase().includes(q) && !(h.whatToBuild || '').toLowerCase().includes(q) && !(h.whatToSubmit || '').toLowerCase().includes(q) && !(h.prizesDetail || '').toLowerCase().includes(q) && !(h.eligibility || '').toLowerCase().includes(q)) return false;
+      if (!h.title.toLowerCase().includes(q) && !h.platform.name.toLowerCase().includes(q)) return false;
     }
     if (filters.prizeMin) {
       if (parsePrize(h.prizePool) < parseFloat(filters.prizeMin)) return false;
@@ -192,7 +236,7 @@ export default function HomeClient({
     setSelectedId(null);
   };
 
-  const selected = allData.find((h) => h.id === selectedId) || null;
+  const selected = (selectedId ? detailCache[selectedId] : null) || null;
 
   return (
     <div className="space-y-4">
@@ -263,15 +307,16 @@ export default function HomeClient({
             >
                 {visible.map((h) => (
                   <HackathonListItem
-                    key={h.id}
-                    id={h.id}
+                    key={h.sourceId}
+                    id={h.sourceId}
                     title={h.title}
                     startDate={h.startDate}
                     endDate={h.endDate}
                     platform={h.platform}
                     prizePool={h.prizePool}
-                    selected={selectedId === h.id}
-                    onClick={() => setSelectedId(h.id)}
+                    selected={selectedId === h.sourceId}
+                    onClick={() => setSelectedId(h.sourceId)}
+                    now={now}
                   />
                 ))}
                 {displayCount < filtered.length && (
@@ -280,7 +325,12 @@ export default function HomeClient({
               </div>
 
             <div className="flex w-full sm:w-2/3 flex-col overflow-y-auto">
-              {selected ? (
+              {loadingDetail ? (
+                <div className="flex h-full flex-col items-center justify-center p-4 text-center text-gray-400">
+                  <div className="mb-3 text-5xl">⟳</div>
+                  <p className="text-sm">Loading details…</p>
+                </div>
+              ) : selected ? (
                 <div className="w-full px-4 sm:px-[2.5rem] py-4">
                   <HackathonDetail
                     title={selected.title}
@@ -297,9 +347,9 @@ export default function HomeClient({
                     timezone={selected.timezone}
                     prizePool={selected.prizePool}
                     themes={selected.themes}
-                    platform={selected.platform}
-                    known={knownSet.has(selected.id)}
-                    onMarkKnown={() => toggleKnown(selected.id)}
+                    platform={{ name: selected.source.charAt(0).toUpperCase() + selected.source.slice(1), slug: selected.source }}
+                    known={knownSet.has(selected.sourceId)}
+                    onMarkKnown={() => toggleKnown(selected.sourceId)}
                   />
                 </div>
               ) : (

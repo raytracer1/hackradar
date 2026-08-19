@@ -20,6 +20,15 @@ export interface HackathonData {
   status: string;
 }
 
+export interface HackathonListItem {
+  sourceId: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  prizePool: string | null;
+  source: string;
+}
+
 const META_KEY = 'meta.json';
 
 // R2 credentials for local dev (loaded from .env)
@@ -74,7 +83,7 @@ async function readJSON(key: string): Promise<any> {
   return readR2S3(key);
 }
 
-export async function getMeta(): Promise<{ version: string; count: number; fileCount?: number } | null> {
+export async function getMeta(): Promise<{ version: string; count: number; fileCount?: number; listKey?: string } | null> {
   return readJSON(META_KEY);
 }
 
@@ -96,11 +105,49 @@ export async function getCurrentHackathons(): Promise<HackathonData[]> {
   return all;
 }
 
+// Lightweight list for the homepage: reads only the small list file the
+// crawler uploads, so the server render doesn't download full details.
+export async function getHackathonList(): Promise<HackathonListItem[]> {
+  const meta = await getMeta();
+  if (!meta) return [];
+
+  const listKey = meta.listKey || `list-${meta.version}.json`;
+  const list = await readJSON(listKey);
+  if (Array.isArray(list)) return list as HackathonListItem[];
+
+  // Fallback: old data without a list file — build the list from full chunks
+  const all = await getCurrentHackathons();
+  return all.map((h) => ({
+    sourceId: h.sourceId,
+    title: h.title,
+    startDate: h.startDate,
+    endDate: h.endDate,
+    prizePool: h.prizePool,
+    source: h.source,
+  }));
+}
+
+// Full detail for one hackathon (fetched on demand by the client).
+export async function getHackathonById(id: string): Promise<HackathonData | null> {
+  const meta = await getMeta();
+  if (!meta) return null;
+
+  const fileCount = meta.fileCount || 1;
+  for (let i = 1; i <= fileCount; i++) {
+    const chunk = await readJSON(`hackathons-${meta.version}-${i}.json`);
+    if (Array.isArray(chunk)) {
+      const found = chunk.find((h) => h.sourceId === id);
+      if (found) return found as HackathonData;
+    }
+  }
+  return null;
+}
+
 export async function getCurrentPlatforms(): Promise<any[]> {
-  const hackathons = await getCurrentHackathons();
+  const list = await getHackathonList();
   const seen = new Set<string>();
   const platforms: any[] = [];
-  for (const h of hackathons) {
+  for (const h of list) {
     const slug = h.source;
     if (!seen.has(slug)) {
       seen.add(slug);

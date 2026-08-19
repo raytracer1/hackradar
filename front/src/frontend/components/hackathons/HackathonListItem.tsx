@@ -7,14 +7,21 @@ interface HackathonListItemProps {
   prizePool: string | null;
   selected: boolean;
   onClick: () => void;
+  // Reference clock: the server render time, passed down so the first client
+  // render computes the same countdown text as the server (hydration-safe).
+  // The client updates it after mount.
+  now: number;
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Fixed UTC so the server (UTC) and any client timezone render the same
+  // text — otherwise the same timestamp can land on different days per
+  // timezone and break hydration (#418). Data timestamps are UTC anyway.
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
-function timeLeft(dateStr: string): string {
-  const diff = new Date(dateStr).getTime() - Date.now();
+function timeLeft(dateStr: string, now: number): string {
+  const diff = new Date(dateStr).getTime() - now;
   if (diff < 0) return 'Ended';
   const totalHours = diff / 3600000;
   const days = Math.floor(totalHours / 24);
@@ -36,9 +43,9 @@ function timeLeft(dateStr: string): string {
 }
 
 export default function HackathonListItem({
-  title, startDate, endDate, platform, prizePool, selected, onClick,
+  title, startDate, endDate, platform, prizePool, selected, onClick, now,
 }: HackathonListItemProps) {
-  const left = timeLeft(endDate);
+  const left = timeLeft(endDate, now);
   const urgent = left.includes('h') || left.includes('m') || left.includes('Ends now');
 
   return (

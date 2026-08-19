@@ -119,12 +119,20 @@ def upload_hackathons(items: list[dict]) -> bool:
             _write_json(s3, key, chunk)
             logger.info(f"Uploaded chunk {i + 1}/{chunk_count}: {key} ({len(chunk)} items)")
 
+        # Lightweight list file: only the fields the homepage list needs, so
+        # the frontend can render the list without downloading full details.
+        LIST_FIELDS = ("sourceId", "title", "startDate", "endDate", "prizePool", "source")
+        list_key = f"list-{version}.json"
+        _write_json(s3, list_key, [{k: h[k] for k in LIST_FIELDS if k in h} for h in items])
+        logger.info(f"Uploaded list file: {list_key} ({len(items)} items)")
+
         now = datetime.now(timezone.utc).isoformat()
         # Update meta
         new_meta = {
             "version": version,
             "count": len(items),
             "fileCount": chunk_count,
+            "listKey": list_key,
             "crawledAt": now,
         }
         _write_json(s3, META_KEY, new_meta)
@@ -137,9 +145,11 @@ def upload_hackathons(items: list[dict]) -> bool:
                 _delete_key(s3, key)
                 logger.info(f"Deleted old file: {key}")
 
-            # Also delete old single-file format if it exists
+            # Also delete old single-file format and old list file if they exist
             old_single = f"hackathons-{old_version}.json"
             _delete_key(s3, old_single)
+            old_list = f"list-{old_version}.json"
+            _delete_key(s3, old_list)
 
         logger.info(f"Upload complete: version={version}")
         notify_front(version)

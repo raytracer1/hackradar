@@ -1,4 +1,4 @@
-import { getCurrentHackathons } from '@/backend/lib/data';
+import { getHackathonList } from '@/backend/lib/data';
 import HomeClient from '@/frontend/components/hackathons/HomeClient';
 
 // ISR with a long safety-net window: the crawler notifies us via
@@ -7,11 +7,10 @@ import HomeClient from '@/frontend/components/hackathons/HomeClient';
 export const revalidate = 86400;
 
 export default async function Home() {
-  const hackathons = await getCurrentHackathons();
+  const list = await getHackathonList();
 
-  const initialData = hackathons.map((h) => ({
+  const initialData = list.map((h) => ({
     ...h,
-    id: h.sourceId,
     platform: {
       name: h.source.charAt(0).toUpperCase() + h.source.slice(1),
       slug: h.source,
@@ -27,5 +26,7 @@ export default async function Home() {
     })
     .map((h) => h.platform);
 
-  return <HomeClient initialData={initialData} initialPlatforms={initialPlatforms} />;
+  // The render time: passed to the client so its first render (ended filter,
+  // countdowns) matches the server HTML exactly — no hydration mismatch.
+  return <HomeClient initialData={initialData} initialPlatforms={initialPlatforms} initialNow={Date.now()} />;
 }
