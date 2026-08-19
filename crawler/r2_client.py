@@ -5,7 +5,7 @@ import boto3
 from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
-from config import R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET, FRONT_BASE_URL, CRAWLER_API_KEY
+from config import R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET, FRONT_BASE_URL, CRAWLER_API_KEY, USER_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +78,9 @@ def notify_front(version: str) -> None:
             headers={
                 "Content-Type": "application/json",
                 "x-crawler-key": CRAWLER_API_KEY,
+                # Cloudflare blocks the default Python-urllib UA (403); use
+                # our own bot UA so the notification reaches the worker.
+                "User-Agent": USER_AGENT,
             },
             method="POST",
         )

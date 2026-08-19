@@ -28,6 +28,11 @@ interface HackathonData {
 
 const DISPLAY = 20;
 
+// Server-rendered default filters. Client-only state (known set, URL params)
+// is loaded in a mount effect AFTER hydration — reading it during the first
+// client render would mismatch the server HTML (React hydration error #418).
+const DEFAULT_FILTERS = { prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' };
+
 function ShinyText({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const mounted = useRef(false);
@@ -57,24 +62,41 @@ export default function HomeClient({
   const [displayCount, setDisplayCount] = useState(DISPLAY);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>(initialPlatforms);
-  const [knownSet, setKnownSet] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('known') || '[]')); } catch { return new Set(); }
-  });
+  // Start empty so the first client render matches the server HTML; the real
+  // known set is loaded after hydration in the mount effect below.
+  const [knownSet, setKnownSet] = useState<Set<string>>(new Set());
+  const [hydrated, setHydrated] = useState(false);
   const [showKnown, setShowKnown] = useState(false);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
-  function readURLParams() {
-    if (typeof window === 'undefined') return { prizeMin: '', prizeMax: '', sortBy: 'endDate', search: '' };
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Hydration-safe mount: read client-only state only after the server HTML
+  // has been adopted, so the first client render always matches it.
+  useEffect(() => {
+    try { setKnownSet(new Set(JSON.parse(localStorage.getItem('known') || '[]'))); } catch {}
+    setHydrated(true);
     const sp = new URLSearchParams(window.location.search);
-    return {
+    setFilters({
       prizeMin: sp.get('prizeMin') || '',
       prizeMax: sp.get('prizeMax') || '',
       sortBy: sp.get('sortBy') || 'endDate',
       search: sp.get('search') || '',
+    });
+    // Back/forward navigation updates the filters from the URL again
+    const onPop = () => {
+      const q = new URLSearchParams(window.location.search);
+      setFilters({
+        prizeMin: q.get('prizeMin') || '',
+        prizeMax: q.get('prizeMax') || '',
+        sortBy: q.get('sortBy') || 'endDate',
+        search: q.get('search') || '',
+      });
+      setDisplayCount(DISPLAY);
     };
-  }
-
-  const [filters, setFilters] = useState(readURLParams);
-  const listRef = useRef<HTMLDivElement>(null);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   function parsePrize(text: string | null): number {
     if (!text) return 0;
@@ -97,9 +119,12 @@ export default function HomeClient({
   const filtered = allData.filter((h) => {
     // Hide ended hackathons
     if (new Date(h.endDate).getTime() < Date.now()) return false;
-    // Known/unknown filter
-    if (showKnown && !knownSet.has(h.id)) return false;
-    if (!showKnown && knownSet.has(h.id)) return false;
+    // Known/unknown filter — applied only after hydration so the first
+    // client render matches the server HTML exactly
+    if (hydrated) {
+      if (showKnown && !knownSet.has(h.id)) return false;
+      if (!showKnown && knownSet.has(h.id)) return false;
+    }
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (!h.title.toLowerCase().includes(q) && !(h.description || '').toLowerCase().includes(q) && !(h.about || '').toLowerCase().includes(q) && !(h.whatToBuild || '').toLowerCase().includes(q) && !(h.whatToSubmit || '').toLowerCase().includes(q) && !(h.prizesDetail || '').toLowerCase().includes(q) && !(h.eligibility || '').toLowerCase().includes(q)) return false;
