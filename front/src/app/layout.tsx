@@ -129,7 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <footer className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
           <div className="border-t border-gray-200 py-8">
-            <div className="grid gap-8 sm:grid-cols-3">
+            <div className="grid gap-8 lg:grid-cols-2">
               {/* Brand */}
               <div>
                 <a href="/" className="text-lg font-bold text-gray-900">
@@ -140,7 +140,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </p>
               </div>
 
-              {/* Links */}
+              <div className="grid gap-8 sm:grid-cols-3">
+                {/* Links */}
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Links</h4>
                 <ul className="mt-3 space-y-2">
@@ -157,6 +158,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       className="text-sm text-gray-500 hover:text-indigo-600 transition-colors"
                     >
                       GitHub
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Contact</h4>
+                <ul className="mt-3 space-y-2">
+                  <li>
+                    <a
+                      href="mailto:hello@hackradar.win"
+                      className="text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      hello@hackradar.win
                     </a>
                   </li>
                 </ul>
@@ -180,6 +196,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </p>
                   </li>
                 </ul>
+                </div>
               </div>
             </div>
 
