@@ -138,6 +138,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <p className="mt-2 text-sm text-gray-500 leading-relaxed">
                   Discover cash prize hackathons from 14 platforms — all in one place.
                 </p>
+                <a
+                  href="https://x.com/BJ_Zheng"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow HackRadar on X"
+                  className="mt-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
               </div>
 
               <div className="grid gap-8 sm:grid-cols-3">
