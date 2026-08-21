@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 # The devfolio.co/hackathons page is a Next.js app: the hackathon data lives
 # in the embedded __NEXT_DATA__ JSON (dehydratedState), not in the DOM.
-# Prize amounts come from their public prizes API, one call per hackathon.
+# The listing payload has no cover image or description — those come from the
+# per-hackathon detail API, prize amounts from the prizes API.
 LISTING_URL = "https://devfolio.co/hackathons"
+DETAIL_API = "https://api.devfolio.co/api/hackathons/{slug}"
 PRIZES_API = "https://api.devfolio.co/api/hackathons/{slug}/prizes"
 
 
@@ -85,6 +87,21 @@ class DevfolioPlugin(BasePlugin):
         if not slug or not name:
             return None
 
+        # Detail API: cover image + description + timezone (the listing
+        # payload carries none of these).
+        cover_img = None
+        description = None
+        timezone_str = it.get("timezone")
+        try:
+            resp = await client.get(DETAIL_API.format(slug=slug))
+            if resp.status_code == 200:
+                detail = resp.json() or {}
+                cover_img = detail.get("cover_img")
+                description = (detail.get("desc") or "").strip()[:1500] or None
+                timezone_str = detail.get("timezone") or timezone_str
+        except Exception:
+            pass
+
         prize_pool = None
         try:
             resp = await client.get(PRIZES_API.format(slug=slug))
@@ -119,11 +136,12 @@ class DevfolioPlugin(BasePlugin):
             source_id=f"devfolio_{it.get('uuid')}",
             source="devfolio",
             title=name,
+            description=description,
             url=f"https://{slug}.devfolio.co/",
-            image_url=it.get("cover_img"),
+            image_url=cover_img,
             start_date=self._parse_dt(it.get("starts_at")) or datetime.now(),
             end_date=self._parse_dt(it.get("ends_at")) or datetime.now(),
-            timezone=it.get("timezone"),
+            timezone=timezone_str,
             prize_pool=prize_pool,
             themes=themes,
         )
