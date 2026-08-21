@@ -5,6 +5,13 @@ export const revalidate = 3600;
 
 const POSTS = [
   {
+    slug: 'biggest-cash-prize-hackathons',
+    title: 'The Biggest Cash Prize Hackathons Right Now',
+    description:
+      'A live ranking of the 10 largest prize pools currently open across every platform HackRadar tracks — refreshed automatically with each crawl.',
+    date: '2026-08-21T00:00:00.000Z',
+  },
+  {
     slug: 'how-to-win-cash-prize-hackathons',
     title: 'How to Win Cash Prize Hackathons — A Practical Guide',
     description:
@@ -15,7 +22,7 @@ const POSTS = [
     slug: 'introducing-hackradar',
     title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
     description:
-      'Stop checking 13 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
+      'Stop checking 12 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
     date: '2025-07-02T00:00:00.000Z',
   },
 ];

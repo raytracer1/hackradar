@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Introducing HackRadar — One Place to Discover Cash Prize Hackathons',
   description:
-    'Stop checking 13 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more — so you spend less time searching and more time building.',
+    'Stop checking 12 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more — so you spend less time searching and more time building.',
   keywords: [
     'hackathon aggregator',
     'cash prize hackathons',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'HackRadar',
     title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
     description:
-      'Stop checking 13 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
+      'Stop checking 12 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
     url: postUrl,
     publishedTime: '2025-07-02T00:00:00.000Z',
     modifiedTime: '2026-08-20T00:00:00.000Z',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
     description:
-      'Stop checking 13 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
+      'Stop checking 12 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
     images: [ogImage],
   },
   robots: {
@@ -72,7 +72,6 @@ const PLATFORMS = [
   { name: 'Devfolio', desc: 'Web3 & web2 hackathons' },
   { name: 'Kaggle', desc: 'Data science competitions' },
   { name: 'DoraHacks', desc: 'Web3 & blockchain' },
-  { name: 'Unstop', desc: 'University & early-career' },
   { name: 'LabLab.ai', desc: 'AI-focused hackathons' },
   { name: 'Luma', desc: 'Community-organized events' },
   { name: 'HackQuest', desc: 'Web3 builder challenges' },
@@ -115,7 +114,7 @@ const postStructuredData = {
       url: postUrl,
       headline: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
       description:
-        'Stop checking 13 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
+        'Stop checking 12 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
       datePublished: '2025-07-02T00:00:00.000Z',
       dateModified: '2026-08-20T00:00:00.000Z',
       author: {
@@ -164,7 +163,7 @@ const postStructuredData = {
           name: 'What is HackRadar?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'HackRadar is a hackathon aggregator that pulls upcoming cash-prize hackathons from 13 platforms — including Devpost, MLH, HackerEarth, Kaggle — into a single, filterable feed. Only hackathons with real money prizes are listed.',
+            text: 'HackRadar is a hackathon aggregator that pulls upcoming cash-prize hackathons from 12 platforms — including Devpost, MLH, HackerEarth, Kaggle — into a single, filterable feed. Only hackathons with real money prizes are listed.',
           },
         },
         {
@@ -172,7 +171,7 @@ const postStructuredData = {
           name: 'Which platforms does HackRadar cover?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'HackRadar covers Devpost, MLH, HackerEarth, Devfolio, Kaggle, DoraHacks, Unstop, LabLab.ai, Luma, HackQuest, Taikai, 0G, and SinCE.AI — 13 platforms in total.',
+            text: 'HackRadar covers Devpost, MLH, HackerEarth, Devfolio, Kaggle, DoraHacks, LabLab.ai, Luma, HackQuest, Taikai, 0G, and SinCE.AI — 12 platforms in total.',
           },
         },
         {
@@ -232,7 +231,7 @@ export default function BlogPost() {
             Hackathons
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-gray-500">
-            Stop checking 13 websites every week. HackRadar aggregates upcoming hackathons with real
+            Stop checking 12 websites every week. HackRadar aggregates upcoming hackathons with real
             money rewards — so you spend less time searching and more time building.
           </p>
 
@@ -272,9 +271,9 @@ export default function BlogPost() {
 
           {/* Section 2: Platforms */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900">13 Platforms, One Feed</h2>
+            <h2 className="text-2xl font-bold text-gray-900">12 Platforms, One Feed</h2>
             <p className="mt-3">
-              HackRadar pulls upcoming hackathons from 13 platforms and shows them in a single,
+              HackRadar pulls upcoming hackathons from 12 platforms and shows them in a single,
               filterable feed:
             </p>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -370,15 +369,15 @@ export default function BlogPost() {
             </h3>
             <p className="mt-1">
               HackRadar is a free hackathon aggregator that collects upcoming coding competitions
-              with cash prizes from 13 platforms into one searchable, filterable feed.
+              with cash prizes from 12 platforms into one searchable, filterable feed.
             </p>
 
             <h3 className="mt-4 text-lg font-semibold text-gray-900">
               Which platforms does HackRadar cover?
             </h3>
             <p className="mt-1">
-              Devpost, MLH, HackerEarth, Devfolio, Kaggle, DoraHacks, Unstop, LabLab.ai, Luma,
-              HackQuest, Taikai, 0G, and SinCE.AI — 13 platforms in total.
+              Devpost, MLH, HackerEarth, Devfolio, Kaggle, DoraHacks, LabLab.ai, Luma,
+              HackQuest, Taikai, 0G, and SinCE.AI — 12 platforms in total.
             </p>
 
             <h3 className="mt-4 text-lg font-semibold text-gray-900">
@@ -425,7 +424,7 @@ export default function BlogPost() {
               or open an issue with the platform you'd like to see added.
             </p>
             <p className="mt-3 text-lg font-semibold text-gray-900">
-              Tired of the bookmark folder with 13 hackathon sites? There's a better way.
+              Tired of the bookmark folder with 12 hackathon sites? There's a better way.
             </p>
           </section>
         </article>
@@ -434,7 +433,7 @@ export default function BlogPost() {
         <div className="mt-12 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-6 py-8 text-center">
           <p className="text-xl font-bold text-gray-900">Ready to find your next hackathon?</p>
           <p className="mt-2 text-gray-600">
-            Browse cash prize hackathons from 13 platforms, all in one place.
+            Browse cash prize hackathons from 12 platforms, all in one place.
           </p>
           <Link
             href="/"

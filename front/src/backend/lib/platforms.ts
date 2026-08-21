@@ -15,7 +15,6 @@ export const PLATFORMS: PlatformMeta[] = [
   { slug: 'devfolio', name: 'Devfolio', tagline: 'Web2 & web3 hackathons' },
   { slug: 'kaggle', name: 'Kaggle', tagline: 'Data science competitions' },
   { slug: 'dorahacks', name: 'DoraHacks', tagline: 'Web3 & blockchain hackathons' },
-  { slug: 'unstop', name: 'Unstop', tagline: 'University & early-career hackathons' },
   { slug: 'lablab', name: 'LabLab.ai', tagline: 'AI-focused hackathons' },
   { slug: 'luma', name: 'Luma', tagline: 'Community-organized events' },
   { slug: 'hackquest', name: 'HackQuest', tagline: 'Web3 builder challenges' },

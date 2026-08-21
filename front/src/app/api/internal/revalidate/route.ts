@@ -44,11 +44,15 @@ export async function POST(request: NextRequest) {
     const objectKey = `incremental-cache/${buildId}/${hash}.cache`;
     await bucket.delete(objectKey);
 
-    // Platform pages share the same data — invalidate their cache entries
-    // too. Tolerated separately so a single failure can't take down the
-    // homepage revalidation above.
+    // Platform pages and the data-driven blog post share the same data —
+    // invalidate their cache entries too. Tolerated separately so a single
+    // failure can't take down the homepage revalidation above.
     try {
-      const keys = ['/platforms', ...PLATFORMS.map((p) => `/platforms/${p.slug}`)];
+      const keys = [
+        '/platforms',
+        ...PLATFORMS.map((p) => `/platforms/${p.slug}`),
+        '/blog/biggest-cash-prize-hackathons',
+      ];
       for (const key of keys) {
         const keyHash = await sha256Hex(key);
         await bucket.delete(`incremental-cache/${buildId}/${keyHash}.cache`);

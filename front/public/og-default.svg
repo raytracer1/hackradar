@@ -4,17 +4,25 @@
       <stop offset="0%" stop-color="#1e1b4b"/>
       <stop offset="100%" stop-color="#312e81"/>
     </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   <!-- Logo badge -->
-  <rect x="60" y="60" width="80" height="80" rx="20" fill="#6366f1"/>
-  <text x="100" y="116" font-family="Inter, system-ui, sans-serif" font-size="52" font-weight="800" fill="white" text-anchor="middle">H</text>
-  <!-- Brand -->
-  <text x="160" y="118" font-family="Inter, system-ui, sans-serif" font-size="48" font-weight="700" fill="white">HackRadar</text>
-  <!-- Tagline -->
-  <text x="60" y="340" font-family="Inter, system-ui, sans-serif" font-size="64" font-weight="700" fill="white">Discover Hackathons</text>
-  <text x="60" y="410" font-family="Inter, system-ui, sans-serif" font-size="32" fill="#a5b4fc">Browse upcoming hackathons from Devpost, MLH,</text>
-  <text x="60" y="456" font-family="Inter, system-ui, sans-serif" font-size="32" fill="#a5b4fc">HackerEarth, Devfolio, and more — all in one place.</text>
+  <rect x="64" y="56" width="72" height="72" rx="18" fill="#6366f1"/>
+  <text x="100" y="106" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="800" fill="#ffffff" text-anchor="middle">H</text>
+  <text x="152" y="104" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="700" fill="#ffffff">HackRadar</text>
+  <!-- Prize badge -->
+  <circle cx="1060" cy="118" r="62" fill="none" stroke="#34d399" stroke-width="4"/>
+  <text x="1060" y="140" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="800" fill="#34d399" text-anchor="middle">$</text>
+  <!-- Headline -->
+  <text x="64" y="330" font-family="Inter, Arial, sans-serif" font-size="76" font-weight="800" fill="#ffffff">Discover <tspan fill="url(#accent)">Cash Prize</tspan></text>
+  <text x="64" y="410" font-family="Inter, Arial, sans-serif" font-size="76" font-weight="800" fill="#ffffff">Hackathons</text>
+  <!-- Subtitle -->
+  <text x="64" y="474" font-family="Inter, Arial, sans-serif" font-size="30" fill="#a5b4fc">Upcoming coding competitions with real money rewards —</text>
+  <text x="64" y="516" font-family="Inter, Arial, sans-serif" font-size="30" fill="#a5b4fc">12 platforms, one feed, updated around the clock.</text>
   <!-- Bottom bar -->
-  <rect x="0" y="622" width="1200" height="8" fill="#6366f1"/>
+  <rect x="0" y="620" width="1200" height="10" fill="#6366f1"/>
 </svg>

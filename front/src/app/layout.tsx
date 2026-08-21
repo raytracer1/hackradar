@@ -139,7 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   HackRadar
                 </a>
                 <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                  Discover cash prize hackathons from 13 platforms — all in one place.
+                  Discover cash prize hackathons from 12 platforms — all in one place.
                 </p>
                 <a
                   href="https://x.com/BJ_Zheng"
