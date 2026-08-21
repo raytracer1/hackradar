@@ -245,54 +245,58 @@ export default function HomeClient({
         <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which <ShinyText className="font-semibold">reward cash</ShinyText> from across the web.</p>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="w-full sm:w-72">
-          <HackathonSearchBar
-            value={filters.search}
-            onChange={(v) => updateFilter('search', v)}
-          />
+      {/* Filter controls — data-nosnippet keeps this UI chrome out of Google's
+          search snippet (it used to pick "End Date, Prize (High → Low)…") */}
+      <div data-nosnippet className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full sm:w-72">
+            <HackathonSearchBar
+              value={filters.search}
+              onChange={(v) => updateFilter('search', v)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <HackathonFilters
+              prizeMin={filters.prizeMin}
+              prizeMax={filters.prizeMax}
+              sortBy={filters.sortBy}
+              onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
+              onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
+              onSortByChange={(v) => updateFilter('sortBy', v)}
+            />
+            <button
+              onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
+              className={`inline-flex items-center rounded-xl border px-3 h-10 text-xs font-medium transition ${
+                showKnown ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Known ({knownCount})
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <HackathonFilters
-            prizeMin={filters.prizeMin}
-            prizeMax={filters.prizeMax}
-            sortBy={filters.sortBy}
-            onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
-            onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
-            onSortByChange={(v) => updateFilter('sortBy', v)}
-          />
-          <button
-            onClick={() => { setShowKnown(!showKnown); setDisplayCount(DISPLAY); setSelectedId(null); }}
-            className={`inline-flex items-center rounded-xl border px-3 h-10 text-xs font-medium transition ${
-              showKnown ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
-            }`}
-          >
-            Known ({knownCount})
-          </button>
-        </div>
-      </div>
 
-      {/* Platforms row — separate line */}
-      {platforms.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {platforms.map((p) => {
-            const active = !selectedSources.has(p.slug);
-            return (
-              <button
-                key={p.slug}
-                onClick={() => handleSourceToggle(p.slug)}
-                className={`h-10 rounded-xl border px-3 text-xs font-medium transition ${
-                  active
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-500'
-                }`}
-              >
-                {p.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
+        {/* Platforms row — separate line */}
+        {platforms.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {platforms.map((p) => {
+              const active = !selectedSources.has(p.slug);
+              return (
+                <button
+                  key={p.slug}
+                  onClick={() => handleSourceToggle(p.slug)}
+                  className={`h-10 rounded-xl border px-3 text-xs font-medium transition ${
+                    active
+                      ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                      : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-500'
+                  }`}
+                >
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <>
         <p className="text-sm text-gray-500">{filtered.length} hackathon{filtered.length !== 1 ? 's' : ''} found</p>
