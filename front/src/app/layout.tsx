@@ -179,6 +179,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       GitHub
                     </a>
                   </li>
+                  <li>
+                    <a href="/rss.xml" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                      RSS
+                    </a>
+                  </li>
                 </ul>
               </div>
 
