@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import AdSlot from '@/frontend/components/ads/AdSlot';
 import HackathonListItem from '@/frontend/components/hackathons/HackathonListItem';
 import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters';
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
@@ -9,8 +10,17 @@ import EmptyState from '@/frontend/components/ui/EmptyState';
 
 // Split out of the main bundle: the detail pane is only rendered after a
 // user selects an item, so its code loads on demand instead of weighing
-// down first paint / hydration.
-const HackathonDetail = dynamic(() => import('@/frontend/components/hackathons/HackathonDetail'));
+// down first paint / hydration. The local loading fallback keeps the
+// suspense from bubbling up to the root boundary — without it, clicking an
+// item suspends the whole page and it flashes/re-renders.
+const HackathonDetail = dynamic(() => import('@/frontend/components/hackathons/HackathonDetail'), {
+  loading: () => (
+    <div className="flex h-full flex-col items-center justify-center p-4 text-center text-gray-400">
+      <div className="mb-3 text-5xl">⟳</div>
+      <p className="text-sm">Loading…</p>
+    </div>
+  ),
+});
 
 // Lightweight list item — the only data the server sends down. Full details
 // are fetched on demand from /api/hackathons/[id] when an item is selected.
@@ -276,6 +286,11 @@ export default function HomeClient({
         <h1 className="text-3xl font-bold text-gray-900">Discover <ShinyText className="font-bold">Cash Prize</ShinyText> Hackathons</h1>
         <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which <ShinyText className="font-semibold">reward cash</ShinyText> from across the web.</p>
       </div>
+
+      {/* Ad right below the intro — 100px reserved (horizontal format
+          request). If the responsive unit renders taller, the container
+          grows on ad arrival; watch CLS after deploy. */}
+      <AdSlot slot="5128567506" format="horizontal" minHeight={100} />
 
       {/* Filter controls — data-nosnippet keeps this UI chrome out of Google's
           search snippet (it used to pick "End Date, Prize (High → Low)…") */}
