@@ -76,8 +76,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {ADS_ID && (
           <>
             <meta name="google-adsense-account" content={ADS_ID} />
-            <script
-              async
+            {/* lazyOnload: fetch ads after the page's load event so the
+                AdSense payload never delays first paint (LCP) or causes
+                layout shifts during load */}
+            <Script
+              strategy="lazyOnload"
               src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS_ID}`}
               crossOrigin="anonymous"
             />
@@ -85,8 +88,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
         {GA_ID && (
           <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-            <Script id="ga-init" strategy="afterInteractive">
+            {/* lazyOnload: analytics doesn't need to be on the critical path —
+                loading it after the load event frees the main thread during
+                LCP (gtag.js is the largest transfer on the page) */}
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
+            <Script id="ga-init" strategy="lazyOnload">
               {`window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
@@ -182,6 +188,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <li>
                     <a href="/rss.xml" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
                       RSS
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/privacy-policy" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                      Privacy Policy
                     </a>
                   </li>
                 </ul>

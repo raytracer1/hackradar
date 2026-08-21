@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import HackathonListItem from '@/frontend/components/hackathons/HackathonListItem';
-import HackathonDetail from '@/frontend/components/hackathons/HackathonDetail';
 import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters';
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
 import EmptyState from '@/frontend/components/ui/EmptyState';
+
+// Split out of the main bundle: the detail pane is only rendered after a
+// user selects an item, so its code loads on demand instead of weighing
+// down first paint / hydration.
+const HackathonDetail = dynamic(() => import('@/frontend/components/hackathons/HackathonDetail'));
 
 // Lightweight list item — the only data the server sends down. Full details
 // are fetched on demand from /api/hackathons/[id] when an item is selected.
