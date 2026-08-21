@@ -66,15 +66,20 @@ function ShinyText({ children, className = '' }: { children: React.ReactNode; cl
 
 export default function HomeClient({
   initialData,
+  initialTotal,
   initialPlatforms,
   initialNow,
 }: {
   initialData: HackathonListData[];
+  initialTotal: number;
   initialPlatforms: { slug: string; name: string }[];
   initialNow: number;
 }) {
   const [allData, setAllData] = useState<HackathonListData[]>(initialData);
   const [displayCount, setDisplayCount] = useState(DISPLAY);
+  // False on first render (both server and client) so the count line shows
+  // initialTotal; flips to true once the full list has been fetched.
+  const [listLoaded, setListLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>(initialPlatforms);
   // Reference clock: equals the server render time until hydration, so the
@@ -124,6 +129,28 @@ export default function HomeClient({
       window.removeEventListener('popstate', onPop);
       clearInterval(timer);
     };
+  }, []);
+
+  // Fetch the full lightweight list after hydration — the server HTML only
+  // carries the first page so the payload stays small for LCP.
+  useEffect(() => {
+    fetch('/api/hackathons/list')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d) && d.length) {
+          setAllData(
+            d.map((h: any) => ({
+              ...h,
+              platform: {
+                name: h.source.charAt(0).toUpperCase() + h.source.slice(1),
+                slug: h.source,
+              },
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setListLoaded(true));
   }, []);
 
   // Fetch the selected item's full details on demand
@@ -299,7 +326,7 @@ export default function HomeClient({
       </div>
 
       <>
-        <p className="text-sm text-gray-500">{filtered.length} hackathon{filtered.length !== 1 ? 's' : ''} found</p>
+        <p className="text-sm text-gray-500">{listLoaded ? filtered.length : initialTotal} hackathon{listLoaded ? (filtered.length !== 1 ? 's' : '') : (initialTotal !== 1 ? 's' : '')} found</p>
 
         {filtered.length === 0 ? (
           <EmptyState />
