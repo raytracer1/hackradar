@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     'coding competitions',
     'hackathon with prizes',
     'hackathon list',
-    'upcoming hackathons 2025',
+    'upcoming hackathons 2026',
   ],
   openGraph: {
     type: 'article',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
       'Stop checking 14 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
     url: postUrl,
     publishedTime: '2025-07-02T00:00:00.000Z',
-    modifiedTime: '2025-07-02T00:00:00.000Z',
+    modifiedTime: '2026-08-20T00:00:00.000Z',
     authors: ['HackRadar'],
     images: [
       {
@@ -117,7 +117,7 @@ const postStructuredData = {
       description:
         'Stop checking 14 websites every week. HackRadar aggregates cash-prize hackathons from Devpost, MLH, HackerEarth, Kaggle, and more.',
       datePublished: '2025-07-02T00:00:00.000Z',
-      dateModified: '2025-07-02T00:00:00.000Z',
+      dateModified: '2026-08-20T00:00:00.000Z',
       author: {
         '@type': 'Organization',
         name: 'HackRadar',
@@ -352,7 +352,7 @@ export default function BlogPost() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900">How It's Built</h2>
             <p className="mt-3">
-              HackRadar runs on <strong>Next.js 15</strong> with the App Router, deployed to{' '}
+              HackRadar runs on <strong>Next.js 16</strong> with the App Router, deployed to{' '}
               <strong>Cloudflare Workers</strong> via OpenNext. Hackathon data lives in{' '}
               <strong>Cloudflare R2</strong>, refreshed by a Python crawler that runs on a schedule
               with multiple source plugins. The entire stack is serverless and costs almost nothing

@@ -11,6 +11,10 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 // `{prefix}/{buildId}/{sha256(key)}.cache` in the NEXT_INC_CACHE_R2_BUCKET.
 const PAGE_CACHE_KEY = '/index';
 
+// IndexNow key — also hosted at /<key>.txt (public/<key>.txt) to prove
+// ownership. Not a secret: it is public by design. Overridable via env.
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || 'ee72776affff8eb22fb03ad5ccfebaa5';
+
 async function sha256Hex(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   return Array.from(new Uint8Array(digest))
@@ -38,6 +42,27 @@ export async function POST(request: NextRequest) {
     const hash = await sha256Hex(PAGE_CACHE_KEY);
     const objectKey = `incremental-cache/${buildId}/${hash}.cache`;
     await bucket.delete(objectKey);
+
+    // Notify search engines (IndexNow) that the homepage changed, so
+    // Bing/Yandex/etc. re-crawl right away instead of waiting for the sitemap.
+    // Best effort — a failed ping must never fail the revalidation itself.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    if (baseUrl) {
+      try {
+        await fetch('https://api.indexnow.org/indexnow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            host: new URL(baseUrl).host,
+            key: INDEXNOW_KEY,
+            urlList: [baseUrl, `${baseUrl}/sitemap.xml`],
+          }),
+        });
+      } catch {
+        // ignore
+      }
+    }
+
     return NextResponse.json({ revalidated: true, buildId, objectKey, now: Date.now() });
   } catch (error) {
     console.error('Revalidation failed:', error);

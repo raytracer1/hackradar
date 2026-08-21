@@ -1,0 +1,65 @@
+import { NextResponse } from 'next/server';
+
+// Blog RSS feed — re-rendered hourly, cheap and static in practice.
+export const revalidate = 3600;
+
+const POSTS = [
+  {
+    slug: 'how-to-win-cash-prize-hackathons',
+    title: 'How to Win Cash Prize Hackathons — A Practical Guide',
+    description:
+      'Picking winnable events, scoping a demoable core, building around sponsors, and nailing the pitch — the full playbook for turning a weekend into prize money.',
+    date: '2026-08-20T00:00:00.000Z',
+  },
+  {
+    slug: 'introducing-hackradar',
+    title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
+    description:
+      'Stop checking 14 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
+    date: '2025-07-02T00:00:00.000Z',
+  },
+];
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+export async function GET() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+  const items = POSTS.map(
+    (p) => `
+    <item>
+      <title>${escapeXml(p.title)}</title>
+      <link>${baseUrl}/blog/${p.slug}</link>
+      <guid isPermaLink="true">${baseUrl}/blog/${p.slug}</guid>
+      <description>${escapeXml(p.description)}</description>
+      <pubDate>${new Date(p.date).toUTCString()}</pubDate>
+    </item>`
+  ).join('');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>HackRadar Blog</title>
+<link>${baseUrl}/blog</link>
+<description>Guides and strategy for hackathon builders — how to find cash prize hackathons and how to win them.</description>
+<language>en-us</language>
+<lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+<atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+${items}
+</channel>
+</rss>`;
+
+  return new NextResponse(xml, {
+    headers: {
+      'Content-Type': 'application/rss+xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=3600',
+    },
+  });
+}

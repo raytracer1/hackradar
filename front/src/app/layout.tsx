@@ -56,6 +56,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: baseUrl,
+    types: {
+      'application/rss+xml': `${baseUrl}/rss.xml`,
+    },
   },
   icons: {
     icon: [

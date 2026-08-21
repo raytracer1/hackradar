@@ -241,7 +241,7 @@ export default function HomeClient({
   return (
     <div className="space-y-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Discover <ShinyText className="font-bold">Money</ShinyText> from Hackathons</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Discover <ShinyText className="font-bold">Cash Prize</ShinyText> Hackathons</h1>
         <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which <ShinyText className="font-semibold">reward cash</ShinyText> from across the web.</p>
       </div>
 
