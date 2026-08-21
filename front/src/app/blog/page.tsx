@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Hackathon Guides & Strategy',
   description:
-    'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 14 platforms in one feed.',
+    'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 13 platforms in one feed.',
   keywords: [
     'hackathon blog',
     'hackathon guides',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'HackRadar',
     title: 'Hackathon Guides & Strategy — HackRadar Blog',
     description:
-      'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 14 platforms in one feed.',
+      'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 13 platforms in one feed.',
     url: blogUrl,
     images: [
       {
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hackathon Guides & Strategy — HackRadar Blog',
     description:
-      'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 14 platforms in one feed.',
+      'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 13 platforms in one feed.',
     images: [ogImage],
   },
   robots: {
@@ -74,7 +74,7 @@ const POSTS = [
     slug: 'introducing-hackradar',
     title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
     excerpt:
-      'Stop checking 14 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
+      'Stop checking 13 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
     dateLabel: 'July 2, 2025',
     dateTime: '2025-07-02',
     readTime: '4 min read',
@@ -108,7 +108,7 @@ const blogStructuredData = {
       '@id': `${blogUrl}/#blog`,
       name: 'HackRadar Blog',
       description:
-        'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 14 platforms in one feed.',
+        'Guides and strategy for hackathon builders: how to find cash prize hackathons, how to win them, and how HackRadar covers 13 platforms in one feed.',
       url: blogUrl,
       inLanguage: 'en-US',
       blogPost: POSTS.map((p) => ({
@@ -196,7 +196,7 @@ export default function BlogIndex() {
         <div className="mt-12 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-6 py-8 text-center">
           <p className="text-xl font-bold text-gray-900">Ready to find your next hackathon?</p>
           <p className="mt-2 text-gray-600">
-            Browse cash prize hackathons from 14 platforms, all in one place.
+            Browse cash prize hackathons from 13 platforms, all in one place.
           </p>
           <Link
             href="/"

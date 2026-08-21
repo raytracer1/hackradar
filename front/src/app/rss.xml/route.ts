@@ -15,7 +15,7 @@ const POSTS = [
     slug: 'introducing-hackradar',
     title: 'Introducing HackRadar — One Place to Discover All Cash Prize Hackathons',
     description:
-      'Stop checking 14 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
+      'Stop checking 13 websites every week. The story behind HackRadar: why it exists, which platforms it covers, and how the filters, sorting, and Known system work.',
     date: '2025-07-02T00:00:00.000Z',
   },
 ];
