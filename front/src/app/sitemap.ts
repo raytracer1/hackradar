@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { PLATFORMS } from '@/backend/lib/platforms';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -28,5 +29,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/platforms`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    ...PLATFORMS.map((p) => ({
+      url: `${baseUrl}/platforms/${p.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    })),
   ];
 }

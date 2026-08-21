@@ -165,6 +165,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </a>
                   </li>
                   <li>
+                    <a href="/platforms" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                      Platforms
+                    </a>
+                  </li>
+                  <li>
                     <a
                       href="https://github.com/raytracer1/hackradar"
                       target="_blank"
