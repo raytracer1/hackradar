@@ -11,7 +11,10 @@ from config import REQUEST_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-MLH_SEASON_URL = "https://www.mlh.com/seasons/2026/events"
+# Season pages rotate: during the summer break the current season's page
+# already shows 0 upcoming events while next season's lists them. Fetch both
+# and merge so the transition never starves the feed.
+SEASON_URL_TEMPLATE = "https://www.mlh.com/seasons/{year}/events"
 MLH_EVENT_URL = "https://www.mlh.com{}"
 
 BROWSER_UA = (
@@ -26,53 +29,60 @@ class MLHPlugin(BasePlugin):
         return "mlh"
 
     async def fetch(self) -> list[HackathonItem]:
-        """Scrape MLH hackathons from the 2026 season page.
+        """Scrape MLH hackathons from the current + next season pages.
 
         MLH uses Inertia.js with SSR — the event data is embedded in the
         initial HTML as a JSON blob inside a <script> tag.
         """
         items: list[HackathonItem] = []
+        seen_ids: set[str] = set()
+        now = datetime.now(timezone.utc)
 
         async with httpx.AsyncClient(
             headers={"User-Agent": BROWSER_UA},
             timeout=REQUEST_TIMEOUT,
+            follow_redirects=True,
         ) as client:
-            try:
-                resp = await client.get(MLH_SEASON_URL)
-                if resp.status_code != 200:
-                    logger.error(
-                        f"MLH season page returned {resp.status_code}"
-                    )
-                    return []
-                html = resp.text
-            except Exception as e:
-                logger.error(f"MLH fetch failed: {e}")
-                return []
-
-            # Extract Inertia.js SSR data from <script> tag
-            events_data = self._extract_inertia_data(html)
-            if not events_data:
-                logger.warning("MLH: could not find Inertia data in page")
-                return []
-
-            upcoming = events_data.get("upcomingEvents", [])
-            logger.info(
-                f"MLH: {len(upcoming)} upcoming events found "
-                f"({len(events_data.get('pastEvents', []))} past)"
-            )
-
-            now = datetime.now(timezone.utc)
-            for ev in upcoming:
+            for year in (now.year, now.year + 1):
+                url = SEASON_URL_TEMPLATE.format(year=year)
                 try:
-                    item = self._parse(ev)
-                    if item is None:
+                    resp = await client.get(url)
+                    if resp.status_code != 200:
+                        logger.error(
+                            f"MLH season page {year} returned {resp.status_code}"
+                        )
                         continue
-                    # Skip already-ended events
-                    if item.end_date < now:
-                        continue
-                    items.append(item)
+                    html = resp.text
                 except Exception as e:
-                    logger.error(f"MLH parse error: {e}")
+                    logger.error(f"MLH fetch failed ({year}): {e}")
+                    continue
+
+                # Extract Inertia.js SSR data from <script> tag
+                events_data = self._extract_inertia_data(html)
+                if not events_data:
+                    logger.warning("MLH: could not find Inertia data in page")
+                    continue
+
+                upcoming = events_data.get("upcomingEvents", [])
+                logger.info(
+                    f"MLH season {year}: {len(upcoming)} upcoming events found "
+                    f"({len(events_data.get('pastEvents', []))} past)"
+                )
+
+                for ev in upcoming:
+                    try:
+                        item = self._parse(ev)
+                        if item is None:
+                            continue
+                        # Skip already-ended events
+                        if item.end_date < now:
+                            continue
+                        if item.source_id in seen_ids:
+                            continue
+                        seen_ids.add(item.source_id)
+                        items.append(item)
+                    except Exception as e:
+                        logger.error(f"MLH parse error: {e}")
 
         # Note: MLH events don't list explicit cash prize amounts on the
         # listing page. Prizes come from sponsors and vary per event.
