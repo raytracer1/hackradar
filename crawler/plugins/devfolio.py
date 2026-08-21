@@ -1,6 +1,8 @@
 import httpx
+import json
 import logging
 from datetime import datetime
+
 from bs4 import BeautifulSoup
 
 from plugins.base import BasePlugin
@@ -9,6 +11,12 @@ from config import USER_AGENT, REQUEST_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
+# The devfolio.co/hackathons page is a Next.js app: the hackathon data lives
+# in the embedded __NEXT_DATA__ JSON (dehydratedState), not in the DOM.
+# Prize amounts come from their public prizes API, one call per hackathon.
+LISTING_URL = "https://devfolio.co/hackathons"
+PRIZES_API = "https://api.devfolio.co/api/hackathons/{slug}/prizes"
+
 
 class DevfolioPlugin(BasePlugin):
     @property
@@ -16,59 +24,115 @@ class DevfolioPlugin(BasePlugin):
         return "devfolio"
 
     async def fetch(self) -> list[HackathonItem]:
-        """Scrape Devfolio hackathons from their public page."""
         items: list[HackathonItem] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": USER_AGENT},
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
             timeout=REQUEST_TIMEOUT,
         ) as client:
-            try:
-                resp = await client.get("https://devfolio.co/hackathons")
-                resp.raise_for_status()
-                soup = BeautifulSoup(resp.text, "lxml")
+            raw_items = await self._fetch_listing(client)
+            if not raw_items:
+                return items
 
-                for card in soup.select("a[href*='hackathons/'], .hackathon-card, [class*='HackathonCard']"):
-                    try:
-                        item = self._parse_card(card)
-                        if item:
-                            items.append(item)
-                    except Exception as e:
-                        logger.error(f"Devfolio card parse error: {e}")
-
-            except Exception as e:
-                logger.error(f"Devfolio scrape failed: {e}")
+            for it in raw_items:
+                try:
+                    item = await self._build_item(client, it)
+                    if item:
+                        items.append(item)
+                except Exception as e:
+                    logger.error(f"Devfolio item error ({it.get('slug')}): {e}")
 
         return items
 
-    def _parse_card(self, card) -> HackathonItem | None:
-        # Get link
-        href = card.get("href", "") if card.name == "a" else ""
-        if not href:
-            link_el = card.select_one("a[href*='hackathon']")
-            if link_el:
-                href = link_el.get("href", "")
+    async def _fetch_listing(self, client: httpx.AsyncClient) -> list[dict]:
+        try:
+            resp = await client.get(LISTING_URL)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "lxml")
+            node = soup.select_one("#__NEXT_DATA__")
+            if not node:
+                logger.error("Devfolio: no __NEXT_DATA__ in listing page")
+                return []
+            payload = json.loads(node.string)
+            data = (
+                payload.get("props", {})
+                .get("pageProps", {})
+                .get("dehydratedState", {})
+                .get("queries", [{}])[0]
+                .get("state", {})
+                .get("data", {})
+            )
+        except Exception as e:
+            logger.error(f"Devfolio listing fetch failed: {e}")
+            return []
 
-        if not href:
+        seen: set[str] = set()
+        result: list[dict] = []
+        for key in ("open_hackathons", "upcoming_hackathons"):
+            for it in data.get(key) or []:
+                uuid = it.get("uuid")
+                if not uuid or uuid in seen:
+                    continue
+                seen.add(uuid)
+                result.append(it)
+        return result
+
+    async def _build_item(
+        self, client: httpx.AsyncClient, it: dict
+    ) -> HackathonItem | None:
+        slug = it.get("slug") or ""
+        name = it.get("name") or ""
+        if not slug or not name:
             return None
 
-        if href and not href.startswith("http"):
-            href = f"https://devfolio.co{href}"
+        prize_pool = None
+        try:
+            resp = await client.get(PRIZES_API.format(slug=slug))
+            if resp.status_code == 200:
+                prizes = resp.json() or []
+                # Prefer the aggregate "Total Prize Pool" entry; otherwise
+                # sum the individual track entries.
+                total_entry = next(
+                    (
+                        p
+                        for p in prizes
+                        if (p.get("name") or "").strip().lower() == "total prize pool"
+                    ),
+                    None,
+                )
+                pool = [total_entry] if total_entry else prizes
+                total = sum(float(p.get("amount") or 0) for p in pool)
+                if total > 0:
+                    currency = (pool[0].get("currency") or "USD").upper()
+                    symbol = "$" if currency == "USD" else f"{currency} "
+                    prize_pool = f"{symbol}{total:,.0f}"
+        except Exception:
+            pass
 
-        # Title
-        title_el = card.select_one("h2, h3, [class*='title'], [class*='name']")
-        title = title_el.get_text(strip=True) if title_el else href.split("/")[-1].replace("-", " ").title()
-
-        source_id = href.rstrip("/").split("/")[-1] if href else title.replace(" ", "-").lower()
+        themes = [
+            t.get("theme", {}).get("name")
+            for t in (it.get("themes") or [])
+            if (t.get("theme") or {}).get("name")
+        ]
 
         return HackathonItem(
-            source_id=f"devfolio_{source_id}",
+            source_id=f"devfolio_{it.get('uuid')}",
             source="devfolio",
-            title=title,
-            url=href,
-            image_url=None,
-            start_date=datetime.now(),
-            end_date=datetime.now(),
-            prize_pool=None,
-            themes=[],
+            title=name,
+            url=f"https://{slug}.devfolio.co/",
+            image_url=it.get("cover_img"),
+            start_date=self._parse_dt(it.get("starts_at")) or datetime.now(),
+            end_date=self._parse_dt(it.get("ends_at")) or datetime.now(),
+            timezone=it.get("timezone"),
+            prize_pool=prize_pool,
+            themes=themes,
         )
+
+    @staticmethod
+    def _parse_dt(value) -> datetime | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value))
+        except ValueError:
+            return None

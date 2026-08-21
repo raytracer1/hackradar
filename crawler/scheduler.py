@@ -82,9 +82,10 @@ class Scheduler:
                 items = await plugin.fetch()
                 kept = 0
                 dropped = 0
-                # mlh / luma events have sponsor prizes without fixed
-                # amounts — skip the global cash-prize filter for them.
-                SKIP_PRIZE_FILTER = {"mlh", "luma"}
+                # mlh / luma / devfolio events often have sponsor prizes
+                # without fixed amounts — skip the global cash-prize filter
+                # for them.
+                SKIP_PRIZE_FILTER = {"mlh", "luma", "devfolio"}
 
                 for item in items:
                     d = item_to_dict(item)

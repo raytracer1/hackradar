@@ -17,6 +17,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from plugins.devpost import DevpostPlugin
+from plugins.devfolio import DevfolioPlugin
 from plugins.dorahacks import DorahacksPlugin
 from plugins.taikai import TaikaiPlugin
 from plugins.lablab import LablabPlugin
@@ -24,6 +25,8 @@ from plugins.luma import LumaPlugin
 from plugins.kaggle import KagglePlugin
 from plugins.mlh import MLHPlugin
 from plugins.hackquest import HackquestPlugin
+from plugins.hackerearth import HackerEarthPlugin
+from plugins.unstop import UnstopPlugin
 from plugins.zerog import ZerogPlugin
 from plugins.sinceai import SinceaiPlugin
 from scheduler import Scheduler
@@ -39,6 +42,7 @@ logger = logging.getLogger("hackradar-crawler")
 def get_plugins():
     return [
         DevpostPlugin(),
+        DevfolioPlugin(),
         DorahacksPlugin(),
         TaikaiPlugin(),
         LablabPlugin(),
@@ -46,6 +50,10 @@ def get_plugins():
         KagglePlugin(),
         MLHPlugin(),
         HackquestPlugin(),
+        # hackerearth.com 的 Guardian 防护对服务器 IP 返回 403（改 UA 无效），
+        # 先保留注册，抓取失败时仅记录日志、贡献 0 条数据。
+        HackerEarthPlugin(),
+        UnstopPlugin(),
         ZerogPlugin(),
         SinceaiPlugin(),
     ]
