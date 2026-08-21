@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import AdSlot from '@/frontend/components/ads/AdSlot';
+import AdSlotDual from '@/frontend/components/ads/AdSlotDual';
 import HackathonListItem from '@/frontend/components/hackathons/HackathonListItem';
 import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters';
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
@@ -287,10 +287,9 @@ export default function HomeClient({
         <p className="mt-2 text-gray-500">Browse and find upcoming hackathons which <ShinyText className="font-semibold">reward cash</ShinyText> from across the web.</p>
       </div>
 
-      {/* Ad right below the intro — 100px reserved (horizontal format
-          request). If the responsive unit renders taller, the container
-          grows on ad arrival; watch CLS after deploy. */}
-      <AdSlot slot="5128567506" format="horizontal" minHeight={100} />
+      {/* Ad right below the intro — two fixed-size units (320x100 mobile,
+          728x100 desktop) switched by CSS, exact sizes reserved (CLS-safe). */}
+      <AdSlotDual mobileSlot="8593220124" desktopSlot="5128567506" />
 
       {/* Filter controls — data-nosnippet keeps this UI chrome out of Google's
           search snippet (it used to pick "End Date, Prize (High → Low)…") */}
