@@ -5,6 +5,8 @@ interface HackathonListItemProps {
   endDate: string;
   platform: { name: string; slug: string };
   prizePool: string | null;
+  // Present when the item is in the skill-based recommendation results.
+  recommendation?: { matchedSkills: string[]; expectedValue: number } | null;
   selected: boolean;
   onClick: () => void;
   // Reference clock: the server render time, passed down so the first client
@@ -43,7 +45,7 @@ function timeLeft(dateStr: string, now: number): string {
 }
 
 export default function HackathonListItem({
-  title, startDate, endDate, platform, prizePool, selected, onClick, now,
+  title, startDate, endDate, platform, prizePool, recommendation, selected, onClick, now,
 }: HackathonListItemProps) {
   const left = timeLeft(endDate, now);
   const urgent = left.includes('h') || left.includes('m') || left.includes('Ends now');
@@ -68,6 +70,16 @@ export default function HackathonListItem({
         <span className="text-sm text-slate-500">{formatDate(startDate)} – {formatDate(endDate)}</span>
         {prizePool && (
           <span className="text-sm font-semibold text-emerald-600">{prizePool}</span>
+        )}
+        {recommendation && (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">Match</span>
+            <span className="text-xs font-medium text-indigo-600">
+              {recommendation.matchedSkills.slice(0, 3).join(' · ')}
+              {recommendation.matchedSkills.length > 3 ? ' …' : ''}
+            </span>
+            <span className="text-xs font-semibold text-emerald-600">≈${recommendation.expectedValue.toLocaleString('en-US')}</span>
+          </span>
         )}
         <span className={`text-sm font-medium ml-auto ${urgent ? 'text-red-600' : 'text-slate-500'}`}>
           {left}

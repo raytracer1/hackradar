@@ -6,7 +6,9 @@ import AdSlotDual from '@/frontend/components/ads/AdSlotDual';
 import HackathonListItem from '@/frontend/components/hackathons/HackathonListItem';
 import HackathonFilters from '@/frontend/components/hackathons/HackathonFilters';
 import HackathonSearchBar from '@/frontend/components/hackathons/HackathonSearchBar';
+import SkillSelect from '@/frontend/components/hackathons/SkillSelect';
 import EmptyState from '@/frontend/components/ui/EmptyState';
+import { getSkill } from '@/backend/lib/skills';
 
 // Split out of the main bundle: the detail pane is only rendered after a
 // user selects an item, so its code loads on demand instead of weighing
@@ -50,6 +52,23 @@ interface HackathonDetailData {
   sourceId: string;
   source: string;
   status: string;
+}
+
+// Result shape of /api/recommend (expected return per day ranking).
+interface RecommendItemData {
+  sourceId: string;
+  score: number; // expected $/day
+  expectedValue: number; // USD
+  matchScore: number;
+  matchedSkills: string[];
+  participants: number | null;
+  daysLeft: number;
+}
+
+interface RecommendResponse {
+  now: number;
+  skills: { id: string; label: string }[];
+  results: RecommendItemData[];
 }
 
 const DISPLAY = 20;
@@ -109,12 +128,23 @@ export default function HomeClient({
   const [showKnown, setShowKnown] = useState(false);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  // Skill-based recommendation. skills starts empty (server HTML match) and
+  // is loaded from localStorage after hydration, like the known set.
+  const [skills, setSkills] = useState<string[]>([]);
+  const [recommend, setRecommend] = useState<RecommendResponse | null>(null);
+  const [recStatus, setRecStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const listRef = useRef<HTMLDivElement>(null);
 
   // Hydration-safe mount: read client-only state only after the server HTML
   // has been adopted, so the first client render always matches it.
   useEffect(() => {
     try { setKnownSet(new Set(JSON.parse(localStorage.getItem('known') || '[]'))); } catch {}
+    try {
+      const s = JSON.parse(localStorage.getItem('skills') || '[]');
+      if (Array.isArray(s)) {
+        setSkills(s.filter((id): id is string => typeof id === 'string' && Boolean(getSkill(id))));
+      }
+    } catch {}
     setNow(Date.now());
     // Keep countdowns roughly fresh (per minute is enough for the list)
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -166,6 +196,29 @@ export default function HomeClient({
       .finally(() => setListLoaded(true));
   }, []);
 
+  // Skill-based ranking. Refetches when skills or the known set change, so a
+  // freshly marked-known item drops out of the recommendations immediately.
+  useEffect(() => {
+    if (!hydrated || skills.length === 0) {
+      setRecommend(null);
+      setRecStatus('idle');
+      return;
+    }
+    setRecStatus('loading');
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(
+        `/api/recommend?skills=${encodeURIComponent(skills.join(','))}&exclude=${encodeURIComponent([...knownSet].join(','))}`,
+        { signal: controller.signal }
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && Array.isArray(d.results)) setRecommend(d); })
+        .catch(() => {}) // aborted or failed — keep the previous order
+        .finally(() => setRecStatus('done'));
+    }, 200);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [skills, knownSet, hydrated]);
+
   // Fetch the selected item's full details on demand
   useEffect(() => {
     if (!selectedId) return;
@@ -197,6 +250,29 @@ export default function HomeClient({
   };
 
   const knownCount = allData.filter((h) => knownSet.has(h.sourceId)).length;
+
+  const handleSkillToggle = (id: string) => {
+    const next = skills.includes(id) ? skills.filter((s) => s !== id) : [...skills, id];
+    setSkills(next);
+    localStorage.setItem('skills', JSON.stringify(next));
+    setDisplayCount(DISPLAY);
+    setSelectedId(null);
+    // First skill selection switches the sort to the recommendation order;
+    // clearing the last skill restores the default end-date sort.
+    if (next.length > 0 && skills.length === 0 && filters.sortBy !== 'recommend') {
+      setFilters({ ...filters, sortBy: 'recommend' });
+    } else if (next.length === 0 && filters.sortBy === 'recommend') {
+      setFilters({ ...filters, sortBy: 'endDate' });
+    }
+  };
+
+  const handleSkillClear = () => {
+    setSkills([]);
+    localStorage.setItem('skills', JSON.stringify([]));
+    setDisplayCount(DISPLAY);
+    setSelectedId(null);
+    if (filters.sortBy === 'recommend') setFilters({ ...filters, sortBy: 'endDate' });
+  };
 
   const filtered = allData.filter((h) => {
     // Hide ended hackathons — using `now` (server render time until
@@ -236,6 +312,20 @@ export default function HomeClient({
       break;
     default: // endDate
       filtered.sort((a: any, b: any) => String(a.endDate || '').localeCompare(String(b.endDate || '')));
+  }
+
+  // Recommended sort: stable partition — ranked items first in rank order,
+  // everything else keeps the default end-date order below them.
+  if (filters.sortBy === 'recommend' && recommend) {
+    const rank = new Map(recommend.results.map((r, i) => [r.sourceId, i]));
+    filtered.sort((a, b) => {
+      const ra = rank.get(a.sourceId);
+      const rb = rank.get(b.sourceId);
+      if (ra !== undefined && rb !== undefined) return ra - rb;
+      if (ra !== undefined) return -1;
+      if (rb !== undefined) return 1;
+      return 0;
+    });
   }
 
   const visible = filtered.slice(0, displayCount);
@@ -278,6 +368,10 @@ export default function HomeClient({
 
   const selected = (selectedId ? detailCache[selectedId] : null) || null;
 
+  // Per-item recommendation info for badges, keyed by sourceId.
+  const recById = new Map<string, { matchedSkills: string[]; expectedValue: number }>();
+  recommend?.results.forEach((r) => recById.set(r.sourceId, { matchedSkills: r.matchedSkills, expectedValue: r.expectedValue }));
+
   return (
     <div className="space-y-4">
       <div className="mb-8">
@@ -292,6 +386,40 @@ export default function HomeClient({
       {/* Filter controls — data-nosnippet keeps this UI chrome out of Google's
           search snippet (it used to pick "End Date, Prize (High → Low)…") */}
       <div data-nosnippet className="space-y-4">
+        {/* Skills row — drives the recommendation ranking (above the search) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SkillSelect selected={skills} onToggle={handleSkillToggle} />
+          {skills.map((id) => {
+            const s = getSkill(id);
+            if (!s) return null;
+            return (
+              <span
+                key={id}
+                className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700"
+              >
+                {s.label}
+                <button
+                  type="button"
+                  onClick={() => handleSkillToggle(id)}
+                  aria-label={`Remove ${s.label}`}
+                  className="text-indigo-400 hover:text-indigo-700"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+          {skills.length > 0 && (
+            <button
+              type="button"
+              onClick={handleSkillClear}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="w-full sm:w-72">
             <HackathonSearchBar
@@ -304,6 +432,7 @@ export default function HomeClient({
               prizeMin={filters.prizeMin}
               prizeMax={filters.prizeMax}
               sortBy={filters.sortBy}
+              recommendAvailable={skills.length > 0}
               onPrizeMinChange={(v) => updateFilter('prizeMin', v)}
               onPrizeMaxChange={(v) => updateFilter('prizeMax', v)}
               onSortByChange={(v) => updateFilter('sortBy', v)}
@@ -345,6 +474,13 @@ export default function HomeClient({
       <>
         <p className="text-sm text-gray-500">{listLoaded ? filtered.length : initialTotal} hackathon{listLoaded ? (filtered.length !== 1 ? 's' : '') : (initialTotal !== 1 ? 's' : '')} found</p>
 
+        {skills.length > 0 && recStatus === 'loading' && (
+          <p className="text-xs text-slate-400">Ranking by your skills…</p>
+        )}
+        {skills.length > 0 && recStatus === 'done' && recommend && recommend.results.length === 0 && (
+          <p className="text-xs text-slate-500">No hackathons matched your skills — try different skills or browse the full list below.</p>
+        )}
+
         {filtered.length === 0 ? (
           <EmptyState />
         ) : (
@@ -362,6 +498,7 @@ export default function HomeClient({
                     endDate={h.endDate}
                     platform={h.platform}
                     prizePool={h.prizePool}
+                    recommendation={recById.get(h.sourceId) ?? null}
                     selected={selectedId === h.sourceId}
                     onClick={() => setSelectedId(h.sourceId)}
                     now={now}

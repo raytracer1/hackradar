@@ -4,12 +4,13 @@ interface FiltersProps {
   prizeMin: string;
   prizeMax: string;
   sortBy: string;
+  recommendAvailable: boolean;
   onPrizeMinChange: (v: string) => void;
   onPrizeMaxChange: (v: string) => void;
   onSortByChange: (v: string) => void;
 }
 
-const sortOptions = [
+const baseSortOptions = [
   { label: 'End Date', value: 'endDate' },
   { label: 'Prize (High → Low)', value: 'prize-desc' },
   { label: 'Prize (Low → High)', value: 'prize-asc' },
@@ -17,9 +18,12 @@ const sortOptions = [
 ];
 
 export default function HackathonFilters({
-  prizeMin, prizeMax, sortBy,
+  prizeMin, prizeMax, sortBy, recommendAvailable,
   onPrizeMinChange, onPrizeMaxChange, onSortByChange,
 }: FiltersProps) {
+  const sortOptions = recommendAvailable
+    ? [{ label: 'Recommended', value: 'recommend' }, ...baseSortOptions]
+    : baseSortOptions;
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Prize range */}

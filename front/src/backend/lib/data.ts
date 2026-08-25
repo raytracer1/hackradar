@@ -5,6 +5,12 @@ export interface HackathonData {
   prizesDetail: string | null;
   // Optional: records crawled before this field existed lack the key.
   participantCount?: number | null;
+  // Present in R2 records (the crawler still stores them) but not shown in
+  // the detail pane — used only by the /api/recommend matching engine.
+  description?: string | null;
+  about?: string | null;
+  whatToBuild?: string | null;
+  whatToSubmit?: string | null;
   eligibility: string | null;
   url: string;
   imageUrl: string | null;
