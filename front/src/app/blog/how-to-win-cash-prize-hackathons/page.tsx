@@ -245,6 +245,17 @@ export default function HowToWinPost() {
               them half-finished. Until you have a track record, mid-sized pools are the sweet spot.
             </p>
             <p className="mt-3">
+              To skip the manual math, try HackRadar's{' '}
+              <Link
+                href="/blog/find-hackathons-by-skills"
+                className="font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
+              >
+                skill matching
+              </Link>
+              : pick your skills and every live hackathon is ranked by expected return per day —
+              prize pool, skill match, competition, and deadline in one score.
+            </p>
+            <p className="mt-3">
               Three filters to apply when choosing:
             </p>
             <ul className="mt-3 list-disc space-y-2 pl-6">

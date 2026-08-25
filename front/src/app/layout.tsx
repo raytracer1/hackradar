@@ -13,13 +13,16 @@ export const metadata: Metadata = {
     default: 'Discover Cash Prize Hackathons — HackRadar',
     template: '%s | HackRadar',
   },
-  description: 'Find hackathons with cash prizes and money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio that pay real money. Discover cash prize hackathons now.',
+  description: 'Find hackathons with cash prizes and money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio that pay real money. Pick your skills and get hackathons ranked by expected return. Discover cash prize hackathons now.',
   keywords: [
     'cash prize hackathons', 'hackathons with money', 'coding competitions with cash',
     'hackathon prizes', 'money rewards', 'cash rewards', 'tech events',
     'Devpost', 'MLH', 'Major League Hacking', 'HackerEarth', 'Devfolio',
     'programming contests', 'software competitions', 'online hackathons',
     'hackathons that pay', 'hackathon aggregator',
+    'hackathon skill matching', 'match skills to hackathons',
+    'hackathon recommendations', 'hackathons ranked by expected return',
+    'which hackathon should I join',
   ],
   openGraph: {
     type: 'website',
