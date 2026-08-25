@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import logging
+import re
 from datetime import datetime, timezone, timedelta
 
 from bs4 import BeautifulSoup
@@ -241,13 +242,27 @@ class DevpostPlugin(BasePlugin):
                     if text:
                         result["about"] = text
             if prizes_article:
-                text = prizes_article.get_text(" ", strip=True)
-                if text:
-                    result["prizesDetail"] = text
+                # Cash prizes only, as "rank — amount" lines. Each prize is
+                # a div.end.prize block with .prize-title and .prize-value;
+                # non-cash prizes (certificates, swag) have no value.
+                lines = []
+                for block in prizes_article.select("div.end.prize"):
+                    title_el = block.select_one(".prize-title")
+                    value_el = block.select_one(".prize-value")
+                    if not title_el or not value_el:
+                        continue
+                    title = title_el.get_text(" ", strip=True)
+                    value = value_el.get_text(" ", strip=True)
+                    if not re.search(r"\d", value):
+                        continue
+                    value = re.sub(r"\s*in cash\s*$", "", value, flags=re.IGNORECASE)
+                    lines.append(f"{title} — {value}")
+                if lines:
+                    result["prizesDetail"] = "\n".join(lines)
 
             # For still-missing keys, fall back to whole-page search
             fallback = self._extract_sections(soup)
-            for key in ("about", "whatToBuild", "whatToSubmit", "prizesDetail", "eligibility"):
+            for key in ("about", "whatToBuild", "whatToSubmit", "eligibility"):
                 if key not in result and key in fallback:
                     result[key] = fallback[key]
 

@@ -108,53 +108,47 @@ class DevfolioPlugin(BasePlugin):
             resp = await client.get(PRIZES_API.format(slug=slug))
             if resp.status_code == 200:
                 prizes = resp.json() or []
+                # Cash prizes only: devfolio credits carry ": Credits" in the
+                # name; zero-amount entries are swag/certificates.
+                cash_prizes = [
+                    p for p in prizes
+                    if "credit" not in (p.get("name") or "").lower()
+                ]
                 # Prefer the aggregate "Total Prize Pool" entry; otherwise
-                # sum the individual track entries.
+                # sum the individual cash entries.
                 total_entry = next(
                     (
                         p
-                        for p in prizes
+                        for p in cash_prizes
                         if (p.get("name") or "").strip().lower() == "total prize pool"
                     ),
                     None,
                 )
-                pool = [total_entry] if total_entry else prizes
+                pool = [total_entry] if total_entry else cash_prizes
                 total = sum(float(p.get("amount") or 0) for p in pool)
                 if total > 0:
                     currency = (pool[0].get("currency") or "USD").upper()
                     symbol = "$" if currency == "USD" else f"{currency} "
                     prize_pool = f"{symbol}{total:,.0f}"
 
-                # Per-prize breakdown for the detail pane: one line per prize
-                # (name, amount, quantity, sponsor). Non-cash prizes (credits,
-                # swag) are listed by name only.
+                # Per-prize detail for the detail pane: one "rank — amount"
+                # line per cash prize, nothing else.
                 lines = []
                 for p in prizes:
                     pname = (p.get("name") or "").strip()
                     if not pname or pname.lower() == "total prize pool":
                         continue
-                    pcur = (p.get("currency") or "USD").upper()
-                    psym = "$" if pcur == "USD" else f"{pcur} "
+                    if "credit" in pname.lower():
+                        continue
                     try:
                         amt = float(p.get("amount") or 0)
                     except (ValueError, TypeError):
                         amt = 0
-                    try:
-                        qty = int(p.get("quantity") or 0)
-                    except (ValueError, TypeError):
-                        qty = 0
-                    sponsor = ""
-                    sponsors = p.get("sponsors") or []
-                    if sponsors and isinstance(sponsors[0], dict):
-                        sponsor = (sponsors[0].get("name") or "").strip()
-                    sponsor_suffix = f" (by {sponsor})" if sponsor else ""
-                    if amt > 0:
-                        qty_suffix = f" × {qty}" if qty > 1 else ""
-                        lines.append(
-                            f"{pname} — {psym}{amt:,.0f}{qty_suffix}{sponsor_suffix}"
-                        )
-                    else:
-                        lines.append(f"{pname}{sponsor_suffix}")
+                    if amt <= 0:
+                        continue
+                    pcur = (p.get("currency") or "USD").upper()
+                    psym = "$" if pcur == "USD" else f"{pcur} "
+                    lines.append(f"{pname} — {psym}{amt:,.0f}")
                 prizes_detail = "\n".join(lines) if lines else None
         except Exception:
             pass
