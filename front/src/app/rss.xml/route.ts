@@ -5,6 +5,13 @@ export const revalidate = 3600;
 
 const POSTS = [
   {
+    slug: 'find-hackathons-by-skills',
+    title: 'Find Hackathons Matched to Your Skills — Ranked by Expected Return',
+    description:
+      'New on HackRadar: pick your skills and every hackathon is ranked by expected return per day — prize pool, skill match, competition, and deadline in one score.',
+    date: '2026-08-25T00:00:00.000Z',
+  },
+  {
     slug: 'biggest-cash-prize-hackathons',
     title: 'The Biggest Cash Prize Hackathons Right Now',
     description:

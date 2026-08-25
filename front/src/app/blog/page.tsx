@@ -62,6 +62,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    slug: 'find-hackathons-by-skills',
+    title: 'Find Hackathons Matched to Your Skills — Ranked by Expected Return',
+    excerpt:
+      'New on HackRadar: pick your skills and every hackathon is ranked by expected return per day — prize pool, skill match, competition, and deadline in one score.',
+    dateLabel: 'August 25, 2026',
+    dateTime: '2026-08-25',
+    readTime: '5 min read',
+  },
+  {
     slug: 'biggest-cash-prize-hackathons',
     title: 'The Biggest Cash Prize Hackathons Right Now',
     excerpt:
