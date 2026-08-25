@@ -118,11 +118,17 @@ function scoreHackathon(h: HackathonData, skills: Skill[], now: number): Scored 
 
   const matched = skills.filter((_, i) => contributions[i] > 0);
 
-  // Competition: fewer participants → higher win chance. Missing data → 1.
+  // Competition: fewer participants → higher win chance. Pure discount
+  // factor (≤ 1.0) so expectedValue never exceeds the prize pool — the
+  // uncapped curve would push matchScore × comp above 1 (a >100% win
+  // probability) for low-competition events. Dividing by 1.25 scales every
+  // event uniformly, so the ranking order is unchanged. Missing data → 1.
   const p = h.participantCount ?? null;
   const comp =
-    p == null || p <= 0 ? 1 : clamp(Math.pow(250 / Math.max(p, 100), 0.35), 0.65, 1.25);
-  //   p=100 → 1.25 | p=250 → 1.0 | p=500 → 0.79 | p=1000 → 0.65
+    p == null || p <= 0
+      ? 1
+      : clamp(Math.pow(250 / Math.max(p, 100), 0.35), 0.65, 1.25) / 1.25;
+  //   p≤100 → 1.0 | p=250 → 0.8 | p=500 → 0.63 | p=1000 → 0.52
 
   const expectedValue = prizeUSD * matchScore * comp; // USD
   const score = expectedValue / Math.max(daysLeft, MIN_DAYS); // $/day
