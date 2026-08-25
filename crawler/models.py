@@ -22,3 +22,4 @@ class HackathonItem(BaseModel):
     themes: list[str] = []
     status: str = "active"
     is_closed: bool = False
+    participant_count: Optional[int] = None

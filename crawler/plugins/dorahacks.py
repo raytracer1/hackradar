@@ -186,6 +186,7 @@ class DorahacksPlugin(BasePlugin):
             end_date=end_date,
             prize_pool=prize_pool,
             themes=themes,
+            participant_count=self.parse_count(h.get("hackers_count")),
         )
 
     @staticmethod

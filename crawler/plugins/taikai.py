@@ -341,6 +341,7 @@ class TaikaiPlugin(BasePlugin):
             prize_pool=prize_pool,
             themes=themes,
             is_closed=h.get("isClosed", False),
+            participant_count=self.parse_count(h.get("participantsCount")),
         )
 
     @staticmethod

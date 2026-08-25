@@ -206,6 +206,7 @@ class HackquestPlugin(BasePlugin):
             timezone=tz_str,
             prize_pool=prize_pool,
             themes=themes,
+            participant_count=self.parse_count(ev.get("participants")),
         )
 
     @staticmethod
@@ -220,7 +221,10 @@ class HackquestPlugin(BasePlugin):
             currencies = {}
             for r in rewards:
                 cur = r.get("currency", "USD")
-                amt = r.get("totalRewards", 0)
+                try:
+                    amt = float(r.get("totalRewards") or 0)
+                except (ValueError, TypeError):
+                    amt = 0
                 currencies[cur] = currencies.get(cur, 0) + amt
             if currencies:
                 currency = max(currencies, key=currencies.get)
@@ -234,7 +238,10 @@ class HackquestPlugin(BasePlugin):
         if total == 0 and rewards:
             for r in rewards:
                 if r.get("currency") == currency:
-                    total += r.get("totalRewards", 0)
+                    try:
+                        total += float(r.get("totalRewards") or 0)
+                    except (ValueError, TypeError):
+                        pass
 
         if total > 0:
             return f"{currency} {int(total):,}"

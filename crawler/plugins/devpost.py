@@ -456,4 +456,5 @@ class DevpostPlugin(BasePlugin):
             end_date=end_date or start_date or datetime.now(timezone.utc),
             prize_pool=self._strip_html(h.get("prize_amount")),
             themes=themes,
+            participant_count=self.parse_count(h.get("registrations_count")),
         )

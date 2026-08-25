@@ -2,11 +2,8 @@ import HackathonDateBadge from './HackathonDateBadge';
 
 interface HackathonDetailProps {
   title: string;
-  description: string | null;
-  about: string | null;
-  whatToBuild: string | null;
-  whatToSubmit: string | null;
   prizesDetail: string | null;
+  participantCount?: number | null;
   eligibility: string | null;
   url: string;
   imageUrl: string | null;
@@ -21,7 +18,7 @@ interface HackathonDetailProps {
 }
 
 export default function HackathonDetail({
-  title, description, about, whatToBuild, whatToSubmit, prizesDetail, eligibility,
+  title, prizesDetail, participantCount, eligibility,
   url, imageUrl, startDate, endDate,
   timezone, prizePool, themes, platform, known, onMarkKnown,
 }: HackathonDetailProps) {
@@ -67,6 +64,12 @@ export default function HackathonDetail({
             <p className="mt-1 text-lg font-bold text-emerald-600">{prizePool}</p>
           </div>
         )}
+        {participantCount != null && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Participants</span>
+            <p className="mt-1 text-lg font-bold text-slate-700">{participantCount.toLocaleString('en-US')}</p>
+          </div>
+        )}
         {eligibility && (
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Who can participate</span>
@@ -83,32 +86,10 @@ export default function HackathonDetail({
         </div>
       )}
 
-      {(description || about || whatToBuild || whatToSubmit || prizesDetail) && (
-        <div className="mt-4 space-y-4">
-          {(description || about) && (
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">About the Challenge</h3>
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{description || about}</div>
-            </div>
-          )}
-          {whatToBuild && (
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">What to Build</h3>
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{whatToBuild}</div>
-            </div>
-          )}
-          {whatToSubmit && (
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">What to Submit</h3>
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{whatToSubmit}</div>
-            </div>
-          )}
-          {prizesDetail && (
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Prizes</h3>
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{prizesDetail}</div>
-            </div>
-          )}
+      {prizesDetail && (
+        <div>
+          <h3 className="mt-4 mb-1 text-sm font-semibold text-slate-900">Prizes</h3>
+          <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{prizesDetail}</div>
         </div>
       )}
 

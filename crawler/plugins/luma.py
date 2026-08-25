@@ -171,6 +171,16 @@ class LumaPlugin(BasePlugin):
 
                     item = self._parse(event_data)
                     if item:
+                        # Counts live on the raw entry (siblings of `event`),
+                        # not on event_data itself. Prefer guest_count
+                        # (registrants) over ticket_count (tickets sold).
+                        if item.participant_count is None:
+                            item.participant_count = self.parse_count(
+                                ev.get("guest_count") or ev.get("ticket_count")
+                            ) or self.parse_count(
+                                event_data.get("guest_count")
+                                or event_data.get("ticket_count")
+                            )
                         items.append(item)
                 except Exception as e:
                     logger.error(f"Luma parse error: {e}")

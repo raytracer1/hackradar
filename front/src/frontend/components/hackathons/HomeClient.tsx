@@ -36,11 +36,9 @@ interface HackathonListData {
 
 interface HackathonDetailData {
   title: string;
-  description: string | null;
-  about: string | null;
-  whatToBuild: string | null;
-  whatToSubmit: string | null;
   prizesDetail: string | null;
+  // Optional: records crawled before this field existed lack the key.
+  participantCount?: number | null;
   eligibility: string | null;
   url: string;
   imageUrl: string | null;
@@ -384,11 +382,8 @@ export default function HomeClient({
                 <div className="w-full px-4 sm:px-[2.5rem] py-4">
                   <HackathonDetail
                     title={selected.title}
-                    description={selected.description}
-                    about={selected.about}
-                    whatToBuild={selected.whatToBuild}
-                    whatToSubmit={selected.whatToSubmit}
                     prizesDetail={selected.prizesDetail}
+                    participantCount={selected.participantCount}
                     eligibility={selected.eligibility}
                     url={selected.url}
                     imageUrl={selected.imageUrl}

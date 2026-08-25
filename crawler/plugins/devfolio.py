@@ -103,6 +103,7 @@ class DevfolioPlugin(BasePlugin):
             pass
 
         prize_pool = None
+        prizes_detail = None
         try:
             resp = await client.get(PRIZES_API.format(slug=slug))
             if resp.status_code == 200:
@@ -123,6 +124,38 @@ class DevfolioPlugin(BasePlugin):
                     currency = (pool[0].get("currency") or "USD").upper()
                     symbol = "$" if currency == "USD" else f"{currency} "
                     prize_pool = f"{symbol}{total:,.0f}"
+
+                # Per-prize breakdown for the detail pane: one line per prize
+                # (name, amount, quantity, sponsor). Non-cash prizes (credits,
+                # swag) are listed by name only.
+                lines = []
+                for p in prizes:
+                    pname = (p.get("name") or "").strip()
+                    if not pname or pname.lower() == "total prize pool":
+                        continue
+                    pcur = (p.get("currency") or "USD").upper()
+                    psym = "$" if pcur == "USD" else f"{pcur} "
+                    try:
+                        amt = float(p.get("amount") or 0)
+                    except (ValueError, TypeError):
+                        amt = 0
+                    try:
+                        qty = int(p.get("quantity") or 0)
+                    except (ValueError, TypeError):
+                        qty = 0
+                    sponsor = ""
+                    sponsors = p.get("sponsors") or []
+                    if sponsors and isinstance(sponsors[0], dict):
+                        sponsor = (sponsors[0].get("name") or "").strip()
+                    sponsor_suffix = f" (by {sponsor})" if sponsor else ""
+                    if amt > 0:
+                        qty_suffix = f" × {qty}" if qty > 1 else ""
+                        lines.append(
+                            f"{pname} — {psym}{amt:,.0f}{qty_suffix}{sponsor_suffix}"
+                        )
+                    else:
+                        lines.append(f"{pname}{sponsor_suffix}")
+                prizes_detail = "\n".join(lines) if lines else None
         except Exception:
             pass
 
@@ -143,7 +176,9 @@ class DevfolioPlugin(BasePlugin):
             end_date=self._parse_dt(it.get("ends_at")) or datetime.now(),
             timezone=timezone_str,
             prize_pool=prize_pool,
+            prizes_detail=prizes_detail,
             themes=themes,
+            participant_count=self.parse_count(it.get("participants_count")),
         )
 
     @staticmethod
