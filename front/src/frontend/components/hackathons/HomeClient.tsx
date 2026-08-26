@@ -139,30 +139,36 @@ export default function HomeClient({
   // has been adopted, so the first client render always matches it.
   useEffect(() => {
     try { setKnownSet(new Set(JSON.parse(localStorage.getItem('known') || '[]'))); } catch {}
+    let savedSkills: string[] = [];
     try {
       const s = JSON.parse(localStorage.getItem('skills') || '[]');
       if (Array.isArray(s)) {
-        setSkills(s.filter((id): id is string => typeof id === 'string' && Boolean(getSkill(id))));
+        savedSkills = s.filter((id): id is string => typeof id === 'string' && Boolean(getSkill(id)));
+        setSkills(savedSkills);
       }
     } catch {}
     setNow(Date.now());
     // Keep countdowns roughly fresh (per minute is enough for the list)
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     setHydrated(true);
+    // No explicit sort in the URL + saved skills → resume the recommendation
+    // order (an explicit ?sortBy= always wins, even after a reload).
     const sp = new URLSearchParams(window.location.search);
     setFilters({
       prizeMin: sp.get('prizeMin') || '',
       prizeMax: sp.get('prizeMax') || '',
-      sortBy: sp.get('sortBy') || 'endDate',
+      sortBy: sp.get('sortBy') || (savedSkills.length > 0 ? 'recommend' : 'endDate'),
       search: sp.get('search') || '',
     });
     // Back/forward navigation updates the filters from the URL again
     const onPop = () => {
       const q = new URLSearchParams(window.location.search);
+      let hasSkills = false;
+      try { hasSkills = JSON.parse(localStorage.getItem('skills') || '[]').length > 0; } catch {}
       setFilters({
         prizeMin: q.get('prizeMin') || '',
         prizeMax: q.get('prizeMax') || '',
-        sortBy: q.get('sortBy') || 'endDate',
+        sortBy: q.get('sortBy') || (hasSkills ? 'recommend' : 'endDate'),
         search: q.get('search') || '',
       });
       setDisplayCount(DISPLAY);
