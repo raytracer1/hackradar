@@ -5,6 +5,13 @@ export const revalidate = 3600;
 
 const POSTS = [
   {
+    slug: 'unemployed-programmer-survival-guide',
+    title: "The Unemployed Programmer's Survival Guide — How to Make Money in the AI Era",
+    description:
+      'Laid off and worried AI is coming for your job? Real income streams that still pay: cash prize hackathons, freelancing with AI leverage, bug bounties, micro-products, and honest advice on what to skip.',
+    date: '2026-08-27T00:00:00.000Z',
+  },
+  {
     slug: 'find-hackathons-by-skills',
     title: 'Find Hackathons Matched to Your Skills — Ranked by Expected Return',
     description:
