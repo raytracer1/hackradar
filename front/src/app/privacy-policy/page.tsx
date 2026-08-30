@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Privacy Policy',
   description:
-    'How HackRadar handles your data: what we collect, how Google Analytics and AdSense use cookies, and your privacy rights.',
+    'How HackRadar handles your data: what we collect, how Google Analytics uses cookies, and your privacy rights.',
   robots: {
     index: true,
     follow: true,
@@ -66,11 +66,6 @@ export default function PrivacyPolicy() {
               address; we use it only in aggregate form.
             </li>
             <li>
-              <strong className="text-gray-900">Advertising cookies.</strong> We use Google AdSense
-              to serve ads. Google and its partners use cookies (including the DART cookie) to
-              serve ads based on your visits to this and other websites.
-            </li>
-            <li>
               <strong className="text-gray-900">Local storage.</strong> The &quot;Known&quot;
               feature stores the list of hackathons you have marked as known in your browser&apos;s
               local storage. This data never leaves your device and is never sent to our servers.
@@ -84,53 +79,13 @@ export default function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-gray-900">How Google Uses Your Data</h2>
-          <p className="mt-3">
-            Third-party vendors, including Google, use cookies to serve ads based on your prior
-            visits to this or other websites. Google&apos;s use of advertising cookies enables it
-            and its partners to serve ads based on your visit to our site and/or other sites on
-            the Internet.
-          </p>
-          <p className="mt-3">
-            You may opt out of personalized advertising by visiting{' '}
-            <a
-              href="https://www.google.com/settings/ads"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
-            >
-              Google Ads Settings
-            </a>{' '}
-            or{' '}
-            <a
-              href="https://www.aboutads.info"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
-            >
-              www.aboutads.info
-            </a>
-            . For more detail on how Google uses data when you use our site, see{' '}
-            <a
-              href="https://policies.google.com/technologies/partner-sites"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
-            >
-              How Google uses information from sites or apps that use our services
-            </a>
-            .
-          </p>
-        </section>
-
-        <section>
           <h2 className="text-2xl font-bold text-gray-900">Your Rights</h2>
           <p className="mt-3">
             Depending on your jurisdiction (including the EU/EEA under GDPR and California under
             CCPA), you may have the right to access, correct, or delete personal data, and to
             object to or restrict certain processing. Since HackRadar does not operate accounts
-            and stores no personal data itself, most requests concern data held by Google; you can
-            exercise those rights through the Google tools linked above.
+            and stores no personal data itself, most requests concern data held by Google
+            Analytics; you can exercise those rights through Google&apos;s tools.
           </p>
           <p className="mt-3">
             To exercise any right with respect to HackRadar, or to ask about this policy, contact

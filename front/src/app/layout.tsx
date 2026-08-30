@@ -4,7 +4,6 @@ import JsonLd from '@/frontend/components/seo/JsonLd';
 import './globals.css';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || '';
-const ADS_ID = process.env.NEXT_PUBLIC_ADS_ID || '';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
@@ -76,19 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {ADS_ID && (
-          <>
-            <meta name="google-adsense-account" content={ADS_ID} />
-            {/* lazyOnload: fetch ads after the page's load event so the
-                AdSense payload never delays first paint (LCP) or causes
-                layout shifts during load */}
-            <Script
-              strategy="lazyOnload"
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS_ID}`}
-              crossOrigin="anonymous"
-            />
-          </>
-        )}
         {GA_ID && (
           <>
             {/* lazyOnload: analytics doesn't need to be on the critical path —
