@@ -62,6 +62,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    slug: 'best-bug-bounty-platforms',
+    title: 'The Best Bug Bounty Platforms for Programmers — Where Security Skills Pay',
+    excerpt:
+      'Between jobs and know how to break software? Bug bounties and audit contests pay per finding, not per seat — a practical guide to HackerOne, Bugcrowd, Immunefi, Cantina and more, plus honest numbers on the ramp-up.',
+    dateLabel: 'August 31, 2026',
+    dateTime: '2026-08-31',
+    readTime: '9 min read',
+  },
+  {
     slug: 'unemployed-programmer-survival-guide',
     title: "The Unemployed Programmer's Survival Guide — How to Make Money in the AI Era",
     excerpt:

@@ -5,6 +5,13 @@ export const revalidate = 3600;
 
 const POSTS = [
   {
+    slug: 'best-bug-bounty-platforms',
+    title: 'The Best Bug Bounty Platforms for Programmers — Where Security Skills Pay',
+    description:
+      'Between jobs and know how to break software? Bug bounties and audit contests pay per finding, not per seat — a practical guide to HackerOne, Bugcrowd, Immunefi, Cantina and more, plus honest numbers on the ramp-up.',
+    date: '2026-08-31T00:00:00.000Z',
+  },
+  {
     slug: 'unemployed-programmer-survival-guide',
     title: "The Unemployed Programmer's Survival Guide — How to Make Money in the AI Era",
     description:
