@@ -5,18 +5,6 @@ const PAGE_SIZE = 20;
 const CHUNK = 200;
 
 async function readR2JSON(key: string): Promise<any> {
-  // Production: Cloudflare binding (try first)
-  try {
-    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
-    const { env } = await getCloudflareContext({ async: true });
-    const bucket = (env as any).DATA_BUCKET;
-    if (bucket) {
-      const obj = await bucket.get(key);
-      if (obj) return await obj.json();
-    }
-  } catch { /* not in Workers */ }
-
-  // Local dev: S3
   const ep = process.env.R2_ENDPOINT;
   const ak = process.env.R2_ACCESS_KEY;
   const sk = process.env.R2_SECRET_KEY;

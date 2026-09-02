@@ -1,5 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-
 export interface HackathonData {
   title: string;
   prizesDetail: string | null;
@@ -35,23 +33,11 @@ export interface HackathonListItem {
 
 const META_KEY = 'meta.json';
 
-// R2 credentials for local dev (loaded from .env)
+// R2 credentials (loaded from .env locally, set on Vercel in production)
 const R2_ENDPOINT = process.env.R2_ENDPOINT || '';
 const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY || '';
 const R2_SECRET_KEY = process.env.R2_SECRET_KEY || '';
 const R2_BUCKET_NAME = process.env.R2_BUCKET || 'hackradar-data';
-
-async function readR2Binding(key: string): Promise<any | null> {
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    const bucket = (env as any).DATA_BUCKET;
-    if (bucket) {
-      const obj = await bucket.get(key);
-      if (obj) return await obj.json();
-    }
-  } catch { /* not in Workers */ }
-  return null;
-}
 
 async function readR2S3(key: string): Promise<any | null> {
   if (!R2_ENDPOINT || !R2_ACCESS_KEY || !R2_SECRET_KEY) return null;
@@ -79,11 +65,6 @@ async function readR2S3(key: string): Promise<any | null> {
 }
 
 async function readJSON(key: string): Promise<any> {
-  // Try Cloudflare binding first (production)
-  const fromR2 = await readR2Binding(key);
-  if (fromR2 !== null) return fromR2;
-
-  // Fallback to S3 API (local dev)
   return readR2S3(key);
 }
 
