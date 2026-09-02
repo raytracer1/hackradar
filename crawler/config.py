@@ -20,7 +20,8 @@ R2_BUCKET = os.getenv("R2_BUCKET", "hackradar-data")
 CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(6 * 3600)))
 
 # Frontend notification (cache revalidation after each successful upload)
-FRONT_BASE_URL = os.getenv("FRONT_BASE_URL", "https://hackradar.win").rstrip("/")
+# www canonical host — the apex 308-redirects to it, notify it directly.
+FRONT_BASE_URL = os.getenv("FRONT_BASE_URL", "https://www.hackradar.win").rstrip("/")
 # Must match the frontend worker's CRAWLER_API_KEY secret
 CRAWLER_API_KEY = os.getenv("CRAWLER_API_KEY", "")
 USER_AGENT = "HackRadarBot/1.0 (+https://github.com/raytracer1/hackradar)"
