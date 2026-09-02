@@ -9,16 +9,18 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Discover Cash Prize Hackathons — HackRadar',
+    default: 'Cash Prize Hackathon Aggregator | HackRadar',
     template: '%s | HackRadar',
   },
-  description: 'Find hackathons with cash prizes and money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio that pay real money. Pick your skills and get hackathons ranked by expected return. Discover cash prize hackathons now.',
+  description:
+    'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
   keywords: [
     'cash prize hackathons', 'hackathons with money', 'coding competitions with cash',
     'hackathon prizes', 'money rewards', 'cash rewards', 'tech events',
     'Devpost', 'MLH', 'Major League Hacking', 'HackerEarth', 'Devfolio',
     'programming contests', 'software competitions', 'online hackathons',
     'hackathons that pay', 'hackathon aggregator',
+    'cash prize hackathon aggregator', 'money prize hackathon aggregator',
     'hackathon skill matching', 'match skills to hackathons',
     'hackathon recommendations', 'hackathons ranked by expected return',
     'which hackathon should I join',
@@ -27,8 +29,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'HackRadar',
-    title: 'Discover Cash Prize Hackathons — HackRadar',
-    description: 'Find hackathons with cash prizes and money rewards. Browse coding competitions that pay real money from Devpost, MLH, HackerEarth, and more.',
+    title: 'Cash Prize Hackathon Aggregator | HackRadar',
+    description:
+      'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
     url: baseUrl,
     images: [
       {
@@ -41,8 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Discover Cash Prize Hackathons — HackRadar',
-    description: 'Find hackathons with cash prizes and money rewards. Browse coding competitions that pay real money.',
+    title: 'Cash Prize Hackathon Aggregator | HackRadar',
+    description:
+      'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
     images: ['/og-default.png'],
   },
   robots: {
@@ -98,7 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 '@id': `${baseUrl}/#website`,
                 url: baseUrl,
                 name: 'HackRadar',
-                description: 'Discover cash prize hackathons with real money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio, and more.',
+                description: 'Cash prize hackathon aggregator — discover hackathons with real money rewards from Devpost, MLH, HackerEarth, Devfolio, and more.',
                 inLanguage: 'en-US',
                 potentialAction: {
                   '@type': 'SearchAction',
@@ -115,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 name: 'HackRadar',
                 url: baseUrl,
                 logo: `${baseUrl}/og-default.png`,
-                description: 'Discover cash prize hackathons with real money rewards. Browse upcoming coding competitions from Devpost, MLH, HackerEarth, Devfolio, and more.',
+                description: 'Cash prize hackathon aggregator — discover hackathons with real money rewards from Devpost, MLH, HackerEarth, Devfolio, and more.',
               },
             ],
           }}
@@ -134,7 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   HackRadar
                 </a>
                 <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                  Discover cash prize hackathons from 12 platforms — all in one place.
+                  Cash prize hackathon aggregator — 12 platforms in one place.
                 </p>
                 <a
                   href="https://x.com/BJ_Zheng"

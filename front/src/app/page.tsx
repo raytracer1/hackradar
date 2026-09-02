@@ -1,8 +1,43 @@
+import type { Metadata } from 'next';
 import { getHackathonList } from '@/backend/lib/data';
 import HomeClient from '@/frontend/components/hackathons/HomeClient';
 import JsonLd from '@/frontend/components/seo/JsonLd';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+// Homepage targets the long-tail "cash prize hackathon aggregator" keyword.
+// The title gets the layout template suffix (%s | HackRadar) automatically.
+// Robots, canonical and RSS alternates are inherited from the root layout.
+export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
+  title: 'Cash Prize Hackathon Aggregator',
+  description:
+    'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'HackRadar',
+    title: 'Cash Prize Hackathon Aggregator — HackRadar',
+    description:
+      'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
+    url: baseUrl,
+    images: [
+      {
+        url: '/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'HackRadar — cash prize hackathon aggregator',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cash Prize Hackathon Aggregator — HackRadar',
+    description:
+      'Cash prize hackathon aggregator — find money prize hackathons from Devpost, MLH, HackerEarth & Devfolio, ranked by expected return per day.',
+    images: ['/og-default.png'],
+  },
+};
 
 // FAQ rich results for the skill-matching feature — the feature itself is
 // client-side interactive, so this schema is what search engines can read.
