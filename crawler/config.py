@@ -17,7 +17,7 @@ R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY", "")
 R2_SECRET_KEY = os.getenv("R2_SECRET_KEY", "")
 R2_BUCKET = os.getenv("R2_BUCKET", "hackradar-data")
 
-CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(6 * 3600)))
+CRAWL_INTERVAL_SECONDS = int(os.getenv("CRAWL_INTERVAL", str(24 * 3600)))
 
 # Frontend notification (cache revalidation after each successful upload)
 # www canonical host — the apex 308-redirects to it, notify it directly.
