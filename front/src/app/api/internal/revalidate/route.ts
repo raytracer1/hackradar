@@ -5,7 +5,7 @@ import { PLATFORMS } from '@/backend/lib/platforms';
 // Crawler calls this endpoint after a successful R2 upload.
 // We validate the shared key, then revalidate the ISR pages that render from
 // R2 data via Vercel's native on-demand ISR — the next request to each path
-// re-renders with fresh data. Pages keep `revalidate = 86400` as a safety net
+// re-renders with fresh data. Pages keep `revalidate = 259200` as a safety net
 // in case the notify never arrives.
 
 // IndexNow key — also hosted at /<key>.txt (public/<key>.txt) to prove

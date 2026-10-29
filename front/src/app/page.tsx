@@ -79,8 +79,8 @@ const homeStructuredData = {
 
 // ISR with a long safety-net window: the crawler notifies us via
 // /api/internal/revalidate to refresh immediately after each upload.
-// This 24h fallback only fires if that notification ever fails.
-export const revalidate = 86400;
+// This 3-day fallback only fires if that notification ever fails.
+export const revalidate = 259200;
 
 export default async function Home() {
   const list = await getHackathonList();

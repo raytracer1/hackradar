@@ -5,9 +5,9 @@ import { getCurrentHackathons } from '@/backend/lib/data';
 import { getPlatformBySlug, PLATFORMS } from '@/backend/lib/platforms';
 import JsonLd from '@/frontend/components/seo/JsonLd';
 
-// ISR with the same 24h safety net as the homepage: the crawler's revalidate
+// ISR with the same 3-day safety net as the homepage: the crawler's revalidate
 // notification deletes this page's cache entry right after each upload.
-export const revalidate = 86400;
+export const revalidate = 259200;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 

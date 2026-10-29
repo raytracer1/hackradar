@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { getCurrentHackathons } from '@/backend/lib/data';
 import JsonLd from '@/frontend/components/seo/JsonLd';
 
-// ISR with the same 24h safety net as the homepage. The crawler's revalidate
+// ISR with the same 3-day safety net as the homepage. The crawler's revalidate
 // notification deletes this page's cache entry too, so the ranking refreshes
 // with every data upload.
-export const revalidate = 86400;
+export const revalidate = 259200;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const postUrl = `${baseUrl}/blog/biggest-cash-prize-hackathons`;
